@@ -8,19 +8,55 @@ This project implements a custom Model Context Protocol (MCP) Server that integr
 
 ## Features
 
-- **Web Crawling**: Crawl websites from a starting URL with configurable depth and page limits
-- **Content Search**: Search through previously crawled content
-- **Content Extraction**: Extract structured content from specific URLs
-- **MCP Integration**: Seamlessly integrates with MCP clients like Claude Desktop, allowing AI assistants to use these tools directly
+### Web Data Acquisition
+- 🌐 **Single Webpage Scraping**: Extract content from individual webpages
+- 🕸️ **Web Crawling**: Crawl websites with configurable depth and page limits
+- 🗺️ **URL Discovery**: Map and discover URLs from a starting point
 
-## Prerequisites
+### Content Processing
+- 🔍 **Deep Research**: Conduct comprehensive research across multiple pages
+- 📊 **Structured Data Extraction**: Extract specific data using CSS selectors or LLM-based extraction
+- 🔎 **Content Search**: Search through previously crawled content
+
+### Integration & Security
+- 🔄 **MCP Integration**: Seamless integration with MCP clients (Claude Desktop, etc.)
+- 🔒 **OAuth Authentication**: Secure access with proper authorization
+- ⚡ **High Performance**: Optimized for speed and efficiency
+
+## Project Structure
+
+```
+crawl4ai-mcp/
+├── src/
+│   ├── index.ts               # Main entry point with OAuth provider setup
+│   ├── auth-handler.ts        # Authentication handler
+│   ├── mcp-server.ts          # MCP server implementation
+│   ├── crawl4ai-adapter.ts    # Adapter for Crawl4AI API
+│   ├── tool-schemas/          # MCP tool schema definitions
+│   │   └── [...].ts           # Tool schemas
+│   ├── handlers/
+│   │   ├── crawl.ts           # Web crawling implementation
+│   │   ├── search.ts          # Search functionality
+│   │   └── extract.ts         # Content extraction
+│   └── utils/                 # Utility functions
+├── tests/                     # Test cases
+├── .github/                   # GitHub configuration
+├── wrangler.toml              # CloudFlare Workers configuration
+├── tsconfig.json              # TypeScript configuration
+├── package.json               # Node.js dependencies
+└── README.md                  # Project documentation
+```
+
+## Getting Started
+
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - [npm](https://www.npmjs.com/)
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/install-and-update/) (CloudFlare Workers CLI)
 - A CloudFlare account
 
-## Installation
+### Installation
 
 1. Clone the repository:
    ```bash
@@ -38,7 +74,7 @@ This project implements a custom Model Context Protocol (MCP) Server that integr
    wrangler kv:namespace create CRAWL_DATA
    ```
 
-   Then update `wrangler.toml` with the KV namespace ID:
+4. Update `wrangler.toml` with the KV namespace ID:
    ```toml
    kv_namespaces = [
      { binding = "CRAWL_DATA", id = "your-namespace-id" }
@@ -47,12 +83,55 @@ This project implements a custom Model Context Protocol (MCP) Server that integr
 
 ## Development
 
+### Local Development
+
 1. Start the development server:
    ```bash
    npm run dev
    ```
 
 2. The server will be available at http://localhost:8787
+
+### Development with Claude Code
+
+This project is designed to be developed using Claude Code, with multiple sessions working on different components.
+
+1. **Create a Claude Code Session**
+   ```bash
+   # Create a new branch for the feature you want to work on
+   git checkout -b feature/feature-name
+
+   # Start a Claude Code session
+   claude code
+   ```
+
+2. **Connect Claude to the Project**
+   In the Claude Code session, provide context about what you're working on:
+   ```
+   I'm working on the crawl4ai-mcp-server repository. 
+   The goal is to implement [feature]. Please help me implement this component
+   following the project architecture and best practices.
+   ```
+
+3. **Follow Conventional Commits**
+   When making commits, follow the conventional commits format:
+   ```
+   feat: Add new feature
+   fix: Fix bug
+   docs: Update documentation
+   chore: Update dependencies
+   test: Add tests
+   ```
+
+4. **Create Pull Requests**
+   After completing a feature:
+   ```bash
+   # Push your branch
+   git push origin feature/feature-name
+
+   # Create a pull request using GitHub CLI or web interface
+   gh pr create --title "feat: Implement feature" --body "Closes #X" --base main
+   ```
 
 ## Deployment
 
@@ -61,9 +140,13 @@ This project implements a custom Model Context Protocol (MCP) Server that integr
    npm run deploy
    ```
 
+2. Your server will be available at the CloudFlare Workers URL assigned to your deployed worker.
+
 ## Usage with MCP Clients
 
-This server implements the Model Context Protocol, allowing AI assistants to access its tools. To connect with an MCP client:
+This server implements the Model Context Protocol, allowing AI assistants to access its tools.
+
+### Connecting to an MCP Client
 
 1. Use the CloudFlare Workers URL assigned to your deployed worker
 2. In Claude Desktop or other MCP clients, add this server as a tool source
@@ -83,24 +166,46 @@ The server can be configured by modifying environment variables in `wrangler.tom
 - `MAX_CRAWL_DEPTH`: Maximum depth for web crawling (default: 3)
 - `MAX_CRAWL_PAGES`: Maximum pages to crawl (default: 100)
 - `API_VERSION`: API version string (default: "v1")
+- `OAUTH_CLIENT_ID`: OAuth client ID for authentication
+- `OAUTH_CLIENT_SECRET`: OAuth client secret for authentication
 
-## Project Structure
+## Roadmap
 
-```
-crawl4ai-mcp-server/
-├── src/
-│   ├── index.ts              # Main entry point
-│   ├── handlers/
-│   │   ├── crawl.ts          # Web crawling implementation
-│   │   ├── search.ts         # Search functionality
-│   │   └── extract.ts        # Content extraction
-├── .github/                  # GitHub configuration
-├── wrangler.toml             # CloudFlare Workers configuration
-├── tsconfig.json             # TypeScript configuration
-├── package.json              # Node.js dependencies
-└── README.md                 # Project documentation
+The project is being developed with these components in mind:
+
+1. **Project Setup and Configuration**: CloudFlare Worker setup, TypeScript configuration
+2. **MCP Server and Tool Schemas**: Implementation of MCP server with tool definitions
+3. **Crawl4AI Adapter**: Integration with the Crawl4AI functionality
+4. **OAuth Authentication**: Secure authentication implementation
+5. **Performance Optimizations**: Enhancing speed and reliability
+6. **Advanced Extraction Features**: Improving structured data extraction capabilities
+
+## Contributing
+
+Contributions are welcome! Please check the open issues or create a new one before starting work on a feature or bug fix. Follow the development workflow described above when submitting contributions.
+
+## Support
+
+If you encounter issues or have questions:
+- Open an issue on the GitHub repository
+- Check the [Crawl4AI documentation](https://crawl4ai.com/docs)
+- Refer to the [Model Context Protocol specification](https://github.com/anthropics/model-context-protocol)
+
+## How to Cite
+
+If you use Crawl4AI MCP Server in your research or projects, please cite it using the following BibTeX entry:
+
+```bibtex
+@software{crawl4ai_mcp_2025,
+  author = {Melin, Bjorn},
+  title = {Crawl4AI MCP Server: High-performance Web Crawling for AI Assistants},
+  url = {https://github.com/BjornMelin/crawl4ai-mcp-server},
+  version = {1.0.0},
+  year = {2025},
+  month = {5}
+}
 ```
 
 ## License
 
-MIT
+[MIT](LICENSE)

@@ -1,6 +1,6 @@
 # Crawl4AI MCP Server
 
-A CloudFlare Worker-based Model Context Protocol (MCP) server that provides web crawling, searching, and content extraction capabilities to AI assistants.
+A Cloudflare Worker-based Model Context Protocol (MCP) server that provides web crawling, searching, and content extraction capabilities to AI assistants.
 
 ## Features
 

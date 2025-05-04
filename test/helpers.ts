@@ -4,9 +4,9 @@
  * Utility functions and mocks to assist with testing.
  */
 
-import { jest } from "@jest/globals";
-import { mock } from "jest-mock-extended";
-import { AxiosInstance, AxiosResponse } from "axios";
+import { jest } from '@jest/globals';
+import { mock } from 'jest-mock-extended';
+import { AxiosInstance, AxiosResponse } from 'axios';
 
 /**
  * Creates a mocked Axios response
@@ -15,7 +15,7 @@ export function mockAxiosResponse<T>(data: T, status = 200): any {
   return {
     data,
     status,
-    statusText: status === 200 ? "OK" : "Error",
+    statusText: status === 200 ? 'OK' : 'Error',
     headers: {},
     config: {},
   };
@@ -41,11 +41,11 @@ export function mockAxiosError<T>(
     error.response = {
       status: response.status || 400,
       data: response.data || { error: message },
-      statusText: response.statusText || "Error",
+      statusText: response.statusText || 'Error',
       headers: response.headers || {},
       config: {
-        url: "https://api.crawl4ai.com/endpoint",
-        method: "POST",
+        url: 'https://api.crawl4ai.com/endpoint',
+        method: 'POST',
         timeout: 30000,
       },
     };
@@ -54,9 +54,9 @@ export function mockAxiosError<T>(
   // For network errors, Axios includes a request object but no response
   if (includeRequest) {
     error.request = {
-      responseURL: "https://api.crawl4ai.com/endpoint",
+      responseURL: 'https://api.crawl4ai.com/endpoint',
       status: 0,
-      responseText: "",
+      responseText: '',
       readyState: 4,
     };
   }
@@ -64,17 +64,17 @@ export function mockAxiosError<T>(
   // Make sure toJSON method returns a proper format for axios errors
   error.toJSON = () => ({
     message,
-    name: "AxiosError",
+    name: 'AxiosError',
     code,
     config: error.response?.config || {
-      url: "https://api.crawl4ai.com/endpoint",
+      url: 'https://api.crawl4ai.com/endpoint',
     },
     status: error.response?.status,
   });
 
   // Ensure isAxiosError is properly detected
   // This is important because error-utils.ts checks for `axiosError.isAxiosError`
-  Object.defineProperty(error, "isAxiosError", {
+  Object.defineProperty(error, 'isAxiosError', {
     get: () => true,
     configurable: true,
     enumerable: true,
@@ -103,7 +103,7 @@ export function createMockAxiosInstance() {
 
 // Mock the entire Axios module
 export function mockAxios(): void {
-  jest.mock("axios", () => ({
+  jest.mock('axios', () => ({
     create: jest.fn(() => createMockAxiosInstance()),
     defaults: {
       headers: {
@@ -125,7 +125,7 @@ export function deepCopy<T>(obj: T): T {
  */
 export function spyOnConsoleError() {
   // Reset the mock to prevent interference between tests
-  const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+  const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
   return spy;
 }
 

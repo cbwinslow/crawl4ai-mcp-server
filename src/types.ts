@@ -15,7 +15,7 @@ export interface MCPContent {
  */
 export interface MCPRequest {
   name: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
 }
 
 /**
@@ -37,5 +37,5 @@ export interface ToolConfig {
   name: string;
   description: string;
   parameters: object;
-  handler: (params: any, rawEnv?: any) => Promise<any>;
+  handler: (params: Record<string, unknown>, rawEnv?: unknown) => Promise<MCPResponse>;
 }

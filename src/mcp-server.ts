@@ -1,6 +1,6 @@
 /**
  * MCP Server
- * 
+ *
  * Configures and initializes the Model Context Protocol server with
  * Crawl4AI tools and handlers.
  */
@@ -17,7 +17,7 @@ import {
   crawl4aiCheckCrawlStatusSchema,
   crawl4aiExtractSchema,
   crawl4aiDeepResearchSchema,
-  crawl4aiSearchSchema
+  crawl4aiSearchSchema,
 } from './tool-schemas';
 
 // Import handlers
@@ -28,7 +28,7 @@ import {
   handleCrawl4aiCheckCrawlStatus,
   handleCrawl4aiExtract,
   handleCrawl4aiDeepResearch,
-  handleCrawl4aiSearch
+  handleCrawl4aiSearch,
 } from './tool-handlers';
 
 // Import adapter
@@ -37,17 +37,21 @@ import adapter from './adapters';
 /**
  * Wraps a handler with standardized error handling
  */
-function wrapHandler(handler: Function): (params: any, rawEnv?: any) => Promise<any> {
-  return async (params: any, rawEnv?: any): Promise<any> => {
+function wrapHandler(
+  handler: (params: Record<string, unknown>, env?: unknown) => Promise<unknown>
+): (params: Record<string, unknown>, rawEnv?: unknown) => Promise<unknown> {
+  return async (params: Record<string, unknown>, rawEnv?: unknown): Promise<unknown> => {
     try {
       return await handler(params, rawEnv as Env);
     } catch (error) {
       console.error('Handler error:', error);
       return {
-        content: [{ 
-          type: 'text', 
-          text: `Error: ${error instanceof Error ? error.message : String(error)}` 
-        }]
+        content: [
+          {
+            type: 'text',
+            text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
       };
     }
   };
@@ -59,46 +63,47 @@ function wrapHandler(handler: Function): (params: any, rawEnv?: any) => Promise<
 const toolConfigs: ToolConfig[] = [
   {
     name: 'crawl4ai_scrape',
-    description: 'Scrape a webpage with options for content extraction including markdown, HTML, and screenshots.',
+    description:
+      'Scrape a webpage with options for content extraction including markdown, HTML, and screenshots.',
     parameters: crawl4aiScrapeSchema,
-    handler: wrapHandler(handleCrawl4aiScrape)
+    handler: wrapHandler(handleCrawl4aiScrape),
   },
   {
     name: 'crawl4ai_map',
     description: 'Discover URLs from a starting point using sitemap.xml and HTML link discovery.',
     parameters: crawl4aiMapSchema,
-    handler: wrapHandler(handleCrawl4aiMap)
+    handler: wrapHandler(handleCrawl4aiMap),
   },
   {
     name: 'crawl4ai_crawl',
     description: 'Start an asynchronous crawl of multiple pages with depth control and filtering.',
     parameters: crawl4aiCrawlSchema,
-    handler: wrapHandler(handleCrawl4aiCrawl)
+    handler: wrapHandler(handleCrawl4aiCrawl),
   },
   {
     name: 'crawl4ai_check_crawl_status',
     description: 'Check the status of a crawl job.',
     parameters: crawl4aiCheckCrawlStatusSchema,
-    handler: wrapHandler(handleCrawl4aiCheckCrawlStatus)
+    handler: wrapHandler(handleCrawl4aiCheckCrawlStatus),
   },
   {
     name: 'crawl4ai_extract',
     description: 'Extract structured information from web pages using LLM.',
     parameters: crawl4aiExtractSchema,
-    handler: wrapHandler(handleCrawl4aiExtract)
+    handler: wrapHandler(handleCrawl4aiExtract),
   },
   {
     name: 'crawl4ai_deep_research',
     description: 'Conduct deep research on a query using web crawling and AI analysis.',
     parameters: crawl4aiDeepResearchSchema,
-    handler: wrapHandler(handleCrawl4aiDeepResearch)
+    handler: wrapHandler(handleCrawl4aiDeepResearch),
   },
   {
     name: 'crawl4ai_search',
     description: 'Search and retrieve content from web pages with optional scraping.',
     parameters: crawl4aiSearchSchema,
-    handler: wrapHandler(handleCrawl4aiSearch)
-  }
+    handler: wrapHandler(handleCrawl4aiSearch),
+  },
 ];
 
 /**
@@ -108,15 +113,15 @@ export const createMCPServer = (env: Env): MCPServer => {
   // Configure the adapter
   adapter.configure({
     apiKey: env.CRAWL4AI_API_KEY,
-    baseUrl: env.CRAWL4AI_API_URL || 'http://localhost:11235'
+    baseUrl: env.CRAWL4AI_API_URL || 'http://localhost:11235',
   });
-  
+
   // Create server
   const server = new MCPServer();
-  
+
   // Register all tools
   toolConfigs.forEach(tool => server.registerTool(tool));
-  
+
   return server;
 };
 

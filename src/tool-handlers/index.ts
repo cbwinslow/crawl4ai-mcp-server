@@ -1,6 +1,6 @@
 /**
  * Tool Handlers
- * 
+ *
  * Barrel export file for all MCP tool handlers.
  * This file simplifies imports in other files by providing a centralized
  * point for importing multiple handlers.

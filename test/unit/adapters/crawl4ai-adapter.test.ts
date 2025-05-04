@@ -4,9 +4,9 @@
  * Unit tests for the Crawl4AI API adapter.
  */
 
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import axios from "axios";
-import { Crawl4AIAdapter } from "../../../src/adapters/crawl4ai-adapter";
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import axios from 'axios';
+import { Crawl4AIAdapter } from '../../../src/adapters/crawl4ai-adapter';
 
 // Create mock axios instance with proper types
 const mockAxiosInstance = {
@@ -18,7 +18,7 @@ const mockAxiosInstance = {
         Authorization: undefined,
       },
     },
-    baseURL: "",
+    baseURL: '',
   },
 };
 
@@ -31,7 +31,7 @@ beforeEach(() => {
 });
 
 // Mock axios module
-jest.mock("axios", () => {
+jest.mock('axios', () => {
   return {
     create: jest.fn(() => mockAxiosInstance),
     defaults: {
@@ -42,7 +42,7 @@ jest.mock("axios", () => {
   };
 });
 
-describe("Crawl4AIAdapter", () => {
+describe('Crawl4AIAdapter', () => {
   let adapter: Crawl4AIAdapter;
 
   beforeEach(() => {
@@ -53,133 +53,125 @@ describe("Crawl4AIAdapter", () => {
     (axios as any).create = jest.fn(() => mockAxiosInstance);
 
     // Create the adapter
-    adapter = new Crawl4AIAdapter("test-api-key", "https://api.crawl4ai.com");
+    adapter = new Crawl4AIAdapter('test-api-key', 'https://api.crawl4ai.com');
   });
 
-  describe("constructor", () => {
-    it("should create an instance with default values", () => {
+  describe('constructor', () => {
+    it('should create an instance with default values', () => {
       // Using _ to indicate unused variable to TypeScript
       const _ = new Crawl4AIAdapter();
       expect(axios.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          baseURL: "http://localhost:11235",
+          baseURL: 'http://localhost:11235',
         })
       );
     });
 
-    it("should create an instance with custom values", () => {
+    it('should create an instance with custom values', () => {
       expect(axios.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          baseURL: "https://api.crawl4ai.com",
+          baseURL: 'https://api.crawl4ai.com',
           headers: expect.objectContaining({
-            "Content-Type": "application/json",
-            "User-Agent": "Crawl4AI-MCP-Server/1.0.0",
+            'Content-Type': 'application/json',
+            'User-Agent': 'Crawl4AI-MCP-Server/1.0.0',
           }),
         })
       );
     });
 
-    it("should set the API key when provided", () => {
-      expect(mockAxiosInstance.defaults.headers.common["Authorization"]).toBe(
-        "Bearer test-api-key"
+    it('should set the API key when provided', () => {
+      expect(mockAxiosInstance.defaults.headers.common['Authorization']).toBe(
+        'Bearer test-api-key'
       );
     });
   });
 
-  describe("setApiKey", () => {
-    it("should set the API key in headers", () => {
-      adapter.setApiKey("new-api-key");
-      expect(mockAxiosInstance.defaults.headers.common["Authorization"]).toBe(
-        "Bearer new-api-key"
-      );
+  describe('setApiKey', () => {
+    it('should set the API key in headers', () => {
+      adapter.setApiKey('new-api-key');
+      expect(mockAxiosInstance.defaults.headers.common['Authorization']).toBe('Bearer new-api-key');
     });
 
-    it("should do nothing when API key is empty", () => {
-      adapter.setApiKey("");
-      expect(mockAxiosInstance.defaults.headers.common["Authorization"]).toBe(
-        "Bearer test-api-key"
+    it('should do nothing when API key is empty', () => {
+      adapter.setApiKey('');
+      expect(mockAxiosInstance.defaults.headers.common['Authorization']).toBe(
+        'Bearer test-api-key'
       );
     });
   });
 
-  describe("configure", () => {
-    it("should set API key when provided", () => {
-      adapter.configure({ apiKey: "configured-key" });
-      expect(mockAxiosInstance.defaults.headers.common["Authorization"]).toBe(
-        "Bearer configured-key"
+  describe('configure', () => {
+    it('should set API key when provided', () => {
+      adapter.configure({ apiKey: 'configured-key' });
+      expect(mockAxiosInstance.defaults.headers.common['Authorization']).toBe(
+        'Bearer configured-key'
       );
     });
 
-    it("should set base URL when provided", () => {
-      adapter.configure({ baseUrl: "https://new-api.crawl4ai.com" });
-      expect(mockAxiosInstance.defaults.baseURL).toBe(
-        "https://new-api.crawl4ai.com"
-      );
+    it('should set base URL when provided', () => {
+      adapter.configure({ baseUrl: 'https://new-api.crawl4ai.com' });
+      expect(mockAxiosInstance.defaults.baseURL).toBe('https://new-api.crawl4ai.com');
     });
 
-    it("should set both API key and base URL when provided", () => {
+    it('should set both API key and base URL when provided', () => {
       adapter.configure({
-        apiKey: "both-key",
-        baseUrl: "https://both-api.crawl4ai.com",
+        apiKey: 'both-key',
+        baseUrl: 'https://both-api.crawl4ai.com',
       });
 
-      expect(mockAxiosInstance.defaults.headers.common["Authorization"]).toBe(
-        "Bearer both-key"
-      );
-      expect(mockAxiosInstance.defaults.baseURL).toBe(
-        "https://both-api.crawl4ai.com"
-      );
+      expect(mockAxiosInstance.defaults.headers.common['Authorization']).toBe('Bearer both-key');
+      expect(mockAxiosInstance.defaults.baseURL).toBe('https://both-api.crawl4ai.com');
     });
   });
 
-  describe("transformParams", () => {
-    it("should transform parameters from camelCase to snake_case", async () => {
+  describe('transformParams', () => {
+    it('should transform parameters from camelCase to snake_case', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: { success: true },
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: {},
         config: {},
       });
 
-      await adapter.scrape("https://example.com", {
-        includeTags: ["div", "p"],
+      await adapter.scrape('https://example.com', {
+        includeTags: ['div', 'p'],
         removeBase64Images: true,
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-        "/scrape",
+        '/scrape',
         expect.objectContaining({
-          url: "https://example.com",
-          include_tags: ["div", "p"],
+          url: 'https://example.com',
+          include_tags: ['div', 'p'],
           remove_base64_images: true,
         }),
         expect.anything()
       );
     });
 
-    it("should transform nested objects recursively", async () => {
+    it('should transform nested objects recursively', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: { success: true },
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: {},
         config: {},
       });
 
-      await adapter.scrape("https://example.com", {
+      await adapter.scrape('https://example.com', {
         nestedObject: {
-          propertyOne: "value",
+          propertyOne: 'value',
           propertyTwo: true,
         },
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-        "/scrape",
+        '/scrape',
         expect.objectContaining({
-          url: "https://example.com",
+          url: 'https://example.com',
           nested_object: {
-            property_one: "value",
+            property_one: 'value',
             property_two: true,
           },
         }),
@@ -187,39 +179,39 @@ describe("Crawl4AIAdapter", () => {
       );
     });
 
-    it("should transform arrays of objects", async () => {
+    it('should transform arrays of objects', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: { success: true },
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: {},
         config: {},
       });
 
-      await adapter.scrape("https://example.com", {
+      await adapter.scrape('https://example.com', {
         actions: [
           {
-            actionType: "click",
-            cssSelector: "button",
+            actionType: 'click',
+            cssSelector: 'button',
           },
           {
-            actionType: "wait",
+            actionType: 'wait',
             timeoutMs: 1000,
           },
         ],
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-        "/scrape",
+        '/scrape',
         expect.objectContaining({
-          url: "https://example.com",
+          url: 'https://example.com',
           actions: [
             {
-              action_type: "click",
-              css_selector: "button",
+              action_type: 'click',
+              css_selector: 'button',
             },
             {
-              action_type: "wait",
+              action_type: 'wait',
               timeout_ms: 1000,
             },
           ],
@@ -228,140 +220,137 @@ describe("Crawl4AIAdapter", () => {
       );
     });
 
-    it("should ignore undefined values", async () => {
+    it('should ignore undefined values', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: { success: true },
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: {},
         config: {},
       });
 
-      await adapter.scrape("https://example.com", {
-        definedValue: "value",
+      await adapter.scrape('https://example.com', {
+        definedValue: 'value',
         undefinedValue: undefined,
       });
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-        "/scrape",
+        '/scrape',
         expect.objectContaining({
-          url: "https://example.com",
-          defined_value: "value",
+          url: 'https://example.com',
+          defined_value: 'value',
         }),
         expect.anything()
       );
 
       // The undefined value should not be in the params
-      const calledParams = mockAxiosInstance.post.mock.calls[0][1] as Record<
-        string,
-        any
-      >;
-      expect("undefined_value" in calledParams).toBe(false);
+      const calledParams = mockAxiosInstance.post.mock.calls[0][1] as Record<string, any>;
+      expect('undefined_value' in calledParams).toBe(false);
     });
   });
 
-  describe("API methods", () => {
+  describe('API methods', () => {
     beforeEach(() => {
       mockAxiosInstance.post.mockReset().mockResolvedValue({
         data: { success: true },
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: {},
         config: {},
       });
       mockAxiosInstance.get.mockReset().mockResolvedValue({
         data: { success: true },
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: {},
         config: {},
       });
     });
 
-    describe("scrape", () => {
-      it("should call the scrape endpoint with params", async () => {
-        await adapter.scrape("https://example.com", { formats: ["markdown"] });
+    describe('scrape', () => {
+      it('should call the scrape endpoint with params', async () => {
+        await adapter.scrape('https://example.com', { formats: ['markdown'] });
 
         expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-          "/scrape",
+          '/scrape',
           expect.objectContaining({
-            url: "https://example.com",
-            formats: ["markdown"],
+            url: 'https://example.com',
+            formats: ['markdown'],
           }),
           expect.any(Object)
         );
       });
 
-      it("should handle errors properly", async () => {
+      it('should handle errors properly', async () => {
         // Create a proper Axios error structure
         const axiosError = {
           isAxiosError: true,
-          name: "AxiosError",
-          message: "Request failed with status code 400",
+          name: 'AxiosError',
+          message: 'Request failed with status code 400',
           response: {
             status: 400,
-            data: { error: "Invalid URL format" },
-            statusText: "Bad Request",
+            data: { error: 'Invalid URL format' },
+            statusText: 'Bad Request',
             headers: {},
             config: {},
           },
-          code: "ERR_SCRAPE",
+          code: 'ERR_SCRAPE',
         } as any;
 
         mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
-        await expect(adapter.scrape("invalid-url")).rejects.toThrow(
-          "API error (400): Invalid URL format"
+        await expect(adapter.scrape('invalid-url')).rejects.toThrow(
+          'API error (400): Invalid URL format'
         );
       });
     });
 
-    describe("deepResearch", () => {
-      it("should call the deep-research endpoint with params", async () => {
-        await adapter.deepResearch("Climate change", { maxDepth: 3 });
+    describe('deepResearch', () => {
+      it('should call the deep-research endpoint with params', async () => {
+        await adapter.deepResearch('Climate change', { maxDepth: 3 });
 
         expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-          "/deep-research",
+          '/deep-research',
           expect.objectContaining({
-            query: "Climate change",
+            query: 'Climate change',
             max_depth: 3,
           }),
           expect.any(Object)
         );
       });
 
-      it("should handle errors with special formatting", async () => {
+      it('should handle errors with special formatting', async () => {
         // Create a proper Axios error structure
         const axiosError = {
           isAxiosError: true,
-          name: "AxiosError",
-          message: "Research failed",
-          code: "ERR_RESEARCH",
+          name: 'AxiosError',
+          message: 'Research failed',
+          code: 'ERR_RESEARCH',
         } as any;
 
         mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
-        const result = await adapter.deepResearch("Query");
+        const result = await adapter.deepResearch('Query');
 
         expect(result).toEqual({
-          query: "Query",
+          query: 'Query',
           success: false,
-          results: { summary: "", sources: [] },
-          error: expect.stringContaining("Research failed"),
+          results: { summary: '', sources: [] },
+          error: expect.stringContaining('Research failed'),
         });
       });
     });
 
-    describe("mapUrls", () => {
-      it("should call the map endpoint with params", async () => {
-        await adapter.mapUrls("https://example.com", {
+    describe('mapUrls', () => {
+      it('should call the map endpoint with params', async () => {
+        await adapter.mapUrls('https://example.com', {
           includeSubdomains: true,
         });
 
         expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-          "/map",
+          '/map',
           expect.objectContaining({
-            url: "https://example.com",
+            url: 'https://example.com',
             include_subdomains: true,
           }),
           expect.any(Object)
@@ -369,14 +358,14 @@ describe("Crawl4AIAdapter", () => {
       });
     });
 
-    describe("crawl", () => {
-      it("should call the crawl endpoint with params", async () => {
-        await adapter.crawl("https://example.com", { maxDepth: 2 });
+    describe('crawl', () => {
+      it('should call the crawl endpoint with params', async () => {
+        await adapter.crawl('https://example.com', { maxDepth: 2 });
 
         expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-          "/crawl",
+          '/crawl',
           expect.objectContaining({
-            url: "https://example.com",
+            url: 'https://example.com',
             max_depth: 2,
           }),
           expect.any(Object)
@@ -384,12 +373,12 @@ describe("Crawl4AIAdapter", () => {
       });
     });
 
-    describe("checkCrawlStatus", () => {
-      it("should call the crawl/status endpoint with params", async () => {
-        await adapter.checkCrawlStatus("abc123", { detailed: true });
+    describe('checkCrawlStatus', () => {
+      it('should call the crawl/status endpoint with params', async () => {
+        await adapter.checkCrawlStatus('abc123', { detailed: true });
 
         expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-          "/crawl/abc123/status",
+          '/crawl/abc123/status',
           expect.objectContaining({
             params: expect.objectContaining({
               detailed: true,
@@ -399,13 +388,13 @@ describe("Crawl4AIAdapter", () => {
       });
     });
 
-    describe("extract", () => {
-      it("should call the extract endpoint with params", async () => {
-        const urls = ["https://example.com", "https://example.org"];
+    describe('extract', () => {
+      it('should call the extract endpoint with params', async () => {
+        const urls = ['https://example.com', 'https://example.org'];
         await adapter.extract(urls, { schema: { properties: {} } });
 
         expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-          "/extract",
+          '/extract',
           expect.objectContaining({
             urls,
             schema: { properties: {} },
@@ -415,14 +404,14 @@ describe("Crawl4AIAdapter", () => {
       });
     });
 
-    describe("search", () => {
-      it("should call the search endpoint with params", async () => {
-        await adapter.search("Query text", { limit: 10 });
+    describe('search', () => {
+      it('should call the search endpoint with params', async () => {
+        await adapter.search('Query text', { limit: 10 });
 
         expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-          "/search",
+          '/search',
           expect.objectContaining({
-            query: "Query text",
+            query: 'Query text',
             limit: 10,
           }),
           expect.any(Object)

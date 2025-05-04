@@ -1,3 +1,11 @@
+# ⚠️ NOTICE ⚠️
+
+**MCP SERVER CURRENTLY UNDER DEVELOPMENT**
+
+**NOT READY FOR PRODUCTION USE**
+
+**WILL UPDATE WHEN OPERATIONAL**
+
 # Crawl4AI MCP Server
 
 🚀 High-performance MCP Server for Crawl4AI - Enable AI assistants to access web scraping, crawling, and deep research via Model Context Protocol. Faster and more efficient than FireCrawl!

@@ -35,7 +35,15 @@ import {
 import adapter from './adapters';
 
 /**
- * Wraps a handler with standardized error handling
+ * Wraps a handler with standardized error handling and logging
+ * 
+ * This function creates a wrapper around tool handlers to ensure:
+ * 1. All errors are caught and transformed into a consistent MCP response
+ * 2. Errors are logged for debugging purposes
+ * 3. Environment variables are passed correctly to handlers
+ * 
+ * @param handler - The original handler function to wrap
+ * @returns A wrapped handler function with error handling
  */
 function wrapHandler(
   handler: (params: Record<string, unknown>, env?: unknown) => Promise<unknown>
@@ -107,7 +115,16 @@ const toolConfigs: ToolConfig[] = [
 ];
 
 /**
- * Creates and configures the MCP server
+ * Creates and configures the MCP server with all available Crawl4AI tools
+ * 
+ * This function initializes an MCPServer instance with:
+ * 1. Adapter configuration using environment variables
+ * 2. Registration of all available Crawl4AI tools
+ * 
+ * The initialized server can then be used to create a worker transport for handling requests.
+ * 
+ * @param env - The environment object containing API keys and configuration
+ * @returns A configured MCPServer instance ready for handling requests
  */
 export const createMCPServer = (env: Env): MCPServer => {
   // Configure the adapter
@@ -127,6 +144,14 @@ export const createMCPServer = (env: Env): MCPServer => {
 
 /**
  * Creates an MCP transport for Cloudflare Workers
+ * 
+ * This function creates and initializes a CloudFlare Worker transport
+ * that can handle MCP protocol requests. It configures the transport with
+ * the server instance and the incoming request.
+ * 
+ * @param request - The incoming HTTP request
+ * @param env - The environment object containing API keys and configuration
+ * @returns A configured worker transport that can handle MCP requests
  */
 export const createWorkerMCPTransport = (request: Request, env: Env) => {
   const server = createMCPServer(env);
@@ -135,6 +160,16 @@ export const createWorkerMCPTransport = (request: Request, env: Env) => {
 
 /**
  * Handles incoming MCP protocol requests
+ * 
+ * This is the main entry point for the MCP server. It:
+ * 1. Creates an MCP server with all tools registered
+ * 2. Creates a worker transport for the request
+ * 3. Processes the request through the transport
+ * 4. Returns the response from the MCP server
+ * 
+ * @param request - The incoming HTTP request
+ * @param env - The environment object containing API keys and configuration
+ * @returns A Response object with the result of the MCP operation
  */
 export const handleMCPRequest = async (request: Request, env: Env): Promise<Response> => {
   const transport = createWorkerMCPTransport(request, env);

@@ -5,17 +5,22 @@
  * and integrates with the OAuth provider for authentication.
  */
 
-import { createOAuthProvider } from '@cloudflare/workers-oauth-provider';
-import { handleMcpRequest } from './mcp-server';
+import { AuthProvider } from '@cloudflare/workers-oauth-provider';
+import { handleMCPRequest } from './mcp-server';
 
+/**
+ * Environment interface for Cloudflare Worker
+ */
 export interface Env {
-  // OAuth configuration
+  // API credentials for Crawl4AI
+  CRAWL4AI_API_KEY: string;
+  
+  // OAuth configuration for authentication
   OAUTH_CLIENT_ID: string;
   OAUTH_CLIENT_SECRET: string;
-  OAUTH_REDIRECT_URL: string;
   
-  // KV namespace for storing session data
-  SESSION_KV: KVNamespace;
+  // KV namespace for session data (optional)
+  SESSION_KV?: KVNamespace;
 }
 
 /**
@@ -27,12 +32,11 @@ export default {
     const url = new URL(request.url);
     
     // Setup OAuth provider
-    const oauthProvider = createOAuthProvider({
-      issuerURL: new URL('https://auth.crawl4ai.com'),
-      clientID: env.OAUTH_CLIENT_ID,
+    const oauthProvider = new AuthProvider({
+      clientId: env.OAUTH_CLIENT_ID,
       clientSecret: env.OAUTH_CLIENT_SECRET,
-      redirectURL: new URL(env.OAUTH_REDIRECT_URL),
-      scope: 'crawl:read crawl:write'
+      redirectUrl: `${url.origin}/oauth/callback`,
+      scope: 'read:user',
     });
     
     // Handle OAuth routes
@@ -42,17 +46,18 @@ export default {
     
     // Handle MCP requests
     if (url.pathname === '/mcp') {
-      // Validate authentication
-      const authResult = await oauthProvider.validateAuthentication(request);
-      if (!authResult.authenticated) {
-        return new Response('Unauthorized', { status: 401 });
+      try {
+        // You may add authentication check here
+        return handleMCPRequest(request, env);
+      } catch (error) {
+        return new Response(JSON.stringify({ error: 'Internal server error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
-      
-      // Process the MCP request
-      return handleMcpRequest(request, env);
     }
     
-    // Handle root path with basic HTML info page
+    // Handle root path with basic info
     if (url.pathname === '/' || url.pathname === '') {
       return new Response(`
         <!DOCTYPE html>

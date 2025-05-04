@@ -5,92 +5,103 @@
  * providing web scraping and crawling capabilities to AI assistants through MCP.
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { randomUUID } from 'crypto';
+import { MCPServer, createWorkerTransport } from '@modelcontextprotocol/sdk';
+import { Env } from './index';
 
-// Import tool schemas
+// Import all tool schemas and handlers
 import {
   crawl4aiScrapeSchema,
-  crawl4aiDeepResearchSchema,
   crawl4aiMapSchema,
   crawl4aiCrawlSchema,
+  crawl4aiCheckCrawlStatusSchema,
   crawl4aiExtractSchema,
-  crawl4aiCheckCrawlStatusSchema
+  crawl4aiDeepResearchSchema
 } from './tool-schemas';
 
-// Import tool handlers
 import {
   handleCrawl4aiScrape,
-  handleCrawl4aiDeepResearch,
   handleCrawl4aiMap,
   handleCrawl4aiCrawl,
+  handleCrawl4aiCheckCrawlStatus,
   handleCrawl4aiExtract,
-  handleCrawl4aiCheckCrawlStatus
+  handleCrawl4aiDeepResearch
 } from './tool-handlers';
 
+// Import adapter to configure API key
+import adapter from './adapters';
+
 /**
- * Initialize the MCP server with Crawl4AI tool schemas and handlers
+ * Create and configure the MCP server
+ * 
+ * @param apiKey Optional API key for Crawl4AI authentication
+ * @returns Configured MCP server instance
  */
-export function initializeMcpServer() {
-  // Create MCP server instance
-  const server = new McpServer({
-    name: 'Crawl4AI MCP Server',
-    version: '1.0.0',
+const createServer = (apiKey?: string) => {
+  // Set API key if provided
+  if (apiKey) {
+    adapter.setApiKey(apiKey);
+  }
+  
+  // Create new MCP server instance
+  const server = new MCPServer();
+  
+  // Register all tool schemas and handlers
+  server.registerTool({
+    name: 'crawl4ai_scrape',
+    description: 'Scrape a single webpage with advanced options for content extraction. Supports various formats including markdown, HTML, and screenshots. Can execute custom actions like clicking or scrolling before scraping.',
+    parameters: crawl4aiScrapeSchema,
+    handler: handleCrawl4aiScrape
   });
-
-  // Register Crawl4AI tools with their schemas and handlers
-  server.tool(
-    'crawl4ai_scrape',
-    crawl4aiScrapeSchema,
-    handleCrawl4aiScrape
-  );
-
-  server.tool(
-    'crawl4ai_deep_research',
-    crawl4aiDeepResearchSchema,
-    handleCrawl4aiDeepResearch
-  );
-
-  server.tool(
-    'crawl4ai_map',
-    crawl4aiMapSchema,
-    handleCrawl4aiMap
-  );
-
-  server.tool(
-    'crawl4ai_crawl',
-    crawl4aiCrawlSchema,
-    handleCrawl4aiCrawl
-  );
-
-  server.tool(
-    'crawl4ai_extract',
-    crawl4aiExtractSchema,
-    handleCrawl4aiExtract
-  );
-
-  server.tool(
-    'crawl4ai_check_crawl_status',
-    crawl4aiCheckCrawlStatusSchema,
-    handleCrawl4aiCheckCrawlStatus
-  );
-
+  
+  server.registerTool({
+    name: 'crawl4ai_map',
+    description: 'Discover URLs from a starting point. Can use both sitemap.xml and HTML link discovery.',
+    parameters: crawl4aiMapSchema,
+    handler: handleCrawl4aiMap
+  });
+  
+  server.registerTool({
+    name: 'crawl4ai_crawl',
+    description: 'Start an asynchronous crawl of multiple pages from a starting URL. Supports depth control, path filtering, and webhook notifications.',
+    parameters: crawl4aiCrawlSchema,
+    handler: handleCrawl4aiCrawl
+  });
+  
+  server.registerTool({
+    name: 'crawl4ai_check_crawl_status',
+    description: 'Check the status of a crawl job.',
+    parameters: crawl4aiCheckCrawlStatusSchema,
+    handler: handleCrawl4aiCheckCrawlStatus
+  });
+  
+  server.registerTool({
+    name: 'crawl4ai_extract',
+    description: 'Extract structured information from web pages using LLM. Supports both cloud AI and self-hosted LLM extraction.',
+    parameters: crawl4aiExtractSchema,
+    handler: handleCrawl4aiExtract
+  });
+  
+  server.registerTool({
+    name: 'crawl4ai_deep_research',
+    description: 'Conduct deep research on a query using web crawling, search, and AI analysis.',
+    parameters: crawl4aiDeepResearchSchema,
+    handler: handleCrawl4aiDeepResearch
+  });
+  
   return server;
-}
+};
 
 /**
- * Create an HTTP transport for the MCP server
+ * Create the MCP server transport for Cloudflare Workers
+ * 
+ * @param request The incoming HTTP request
+ * @param env Environment variables and bindings
+ * @returns Configured MCP transport instance
  */
-export function createMcpServerTransport(req: Request, env: any) {
-  return new StreamableHTTPServerTransport({
-    sessionIdGenerator: () => randomUUID(),
-    onsessioninitialized: (sessionId) => {
-      // Store session data in KV storage if needed
-      console.log(`Session initialized: ${sessionId}`);
-    }
-  });
-}
+export const createWorkerMCPTransport = (request: Request, env: Env) => {
+  const server = createServer(env.CRAWL4AI_API_KEY);
+  return createWorkerTransport(server, request);
+};
 
 /**
  * Handle MCP requests from clients
@@ -99,13 +110,7 @@ export function createMcpServerTransport(req: Request, env: any) {
  * @param env Environment variables and bindings
  * @returns HTTP response
  */
-export async function handleMcpRequest(request: Request, env: any): Promise<Response> {
-  const server = initializeMcpServer();
-  const transport = createMcpServerTransport(request, env);
-  
-  // Connect the transport to the server
-  await server.connect(transport);
-  
-  // Process the request through the transport
-  return await transport.handleRequest(request, new Response());
-}
+export const handleMCPRequest = async (request: Request, env: Env): Promise<Response> => {
+  const transport = createWorkerMCPTransport(request, env);
+  return transport.handleRequest();
+};

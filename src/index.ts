@@ -47,10 +47,44 @@ export default {
     // Handle MCP requests
     if (url.pathname === '/mcp') {
       try {
-        // You may add authentication check here
+        // Verify authentication
+        const authHeader = request.headers.get('Authorization');
+        
+        // Check if Authorization header exists and is in the correct format
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return new Response(JSON.stringify({ 
+            error: 'Unauthorized', 
+            message: 'Valid Authorization header with Bearer token is required'
+          }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        
+        // Extract the token
+        const token = authHeader.replace('Bearer ', '');
+        
+        // If using session KV, validate token against stored session
+        if (env.SESSION_KV) {
+          const session = await env.SESSION_KV.get(token);
+          if (!session) {
+            return new Response(JSON.stringify({ 
+              error: 'Unauthorized', 
+              message: 'Invalid or expired token'
+            }), {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        }
+        
+        // Pass the authenticated request to the MCP handler
         return handleMCPRequest(request, env);
       } catch (error) {
-        return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        return new Response(JSON.stringify({ 
+          error: 'Internal server error',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        }), {
           status: 500,
           headers: { 'Content-Type': 'application/json' }
         });
@@ -76,7 +110,11 @@ export default {
           <h1>Crawl4AI MCP Server</h1>
           <p>This server provides Model Context Protocol (MCP) access to Crawl4AI's web scraping and crawling capabilities.</p>
           <p>To use this server with Claude or other MCP-enabled AI assistants, connect to: <code>${url.origin}/mcp</code></p>
-          <p>Authentication is required. <a href="/oauth/login">Login here</a>.</p>
+          <p>Authentication is required:</p>
+          <ul>
+            <li>Use OAuth: <a href="/oauth/login">Login here</a></li>
+            <li>Or use an API key via a Bearer token in the Authorization header</li>
+          </ul>
         </body>
         </html>
       `, {

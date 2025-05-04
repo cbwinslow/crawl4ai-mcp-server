@@ -45,48 +45,50 @@ const createServer = (apiKey?: string) => {
   // Create new MCP server instance
   const server = new MCPServer();
   
-  // Register all tool schemas and handlers
-  server.registerTool({
-    name: 'crawl4ai_scrape',
-    description: 'Scrape a single webpage with advanced options for content extraction. Supports various formats including markdown, HTML, and screenshots. Can execute custom actions like clicking or scrolling before scraping.',
-    parameters: crawl4aiScrapeSchema,
-    handler: handleCrawl4aiScrape
-  });
+  // Define tool configurations for registration
+  const toolConfigs = [
+    {
+      name: 'crawl4ai_scrape',
+      description: 'Scrape a single webpage with advanced options for content extraction. Supports various formats including markdown, HTML, and screenshots. Can execute custom actions like clicking or scrolling before scraping.',
+      parameters: crawl4aiScrapeSchema,
+      handler: handleCrawl4aiScrape
+    },
+    {
+      name: 'crawl4ai_map',
+      description: 'Discover URLs from a starting point. Can use both sitemap.xml and HTML link discovery.',
+      parameters: crawl4aiMapSchema,
+      handler: handleCrawl4aiMap
+    },
+    {
+      name: 'crawl4ai_crawl',
+      description: 'Start an asynchronous crawl of multiple pages from a starting URL. Supports depth control, path filtering, and webhook notifications.',
+      parameters: crawl4aiCrawlSchema,
+      handler: handleCrawl4aiCrawl
+    },
+    {
+      name: 'crawl4ai_check_crawl_status',
+      description: 'Check the status of a crawl job.',
+      parameters: crawl4aiCheckCrawlStatusSchema,
+      handler: handleCrawl4aiCheckCrawlStatus
+    },
+    {
+      name: 'crawl4ai_extract',
+      description: 'Extract structured information from web pages using LLM. Supports both cloud AI and self-hosted LLM extraction.',
+      parameters: crawl4aiExtractSchema,
+      handler: handleCrawl4aiExtract
+    },
+    {
+      name: 'crawl4ai_deep_research',
+      description: 'Conduct deep research on a query using web crawling, search, and AI analysis.',
+      parameters: crawl4aiDeepResearchSchema,
+      handler: handleCrawl4aiDeepResearch
+    }
+  ];
   
-  server.registerTool({
-    name: 'crawl4ai_map',
-    description: 'Discover URLs from a starting point. Can use both sitemap.xml and HTML link discovery.',
-    parameters: crawl4aiMapSchema,
-    handler: handleCrawl4aiMap
-  });
-  
-  server.registerTool({
-    name: 'crawl4ai_crawl',
-    description: 'Start an asynchronous crawl of multiple pages from a starting URL. Supports depth control, path filtering, and webhook notifications.',
-    parameters: crawl4aiCrawlSchema,
-    handler: handleCrawl4aiCrawl
-  });
-  
-  server.registerTool({
-    name: 'crawl4ai_check_crawl_status',
-    description: 'Check the status of a crawl job.',
-    parameters: crawl4aiCheckCrawlStatusSchema,
-    handler: handleCrawl4aiCheckCrawlStatus
-  });
-  
-  server.registerTool({
-    name: 'crawl4ai_extract',
-    description: 'Extract structured information from web pages using LLM. Supports both cloud AI and self-hosted LLM extraction.',
-    parameters: crawl4aiExtractSchema,
-    handler: handleCrawl4aiExtract
-  });
-  
-  server.registerTool({
-    name: 'crawl4ai_deep_research',
-    description: 'Conduct deep research on a query using web crawling, search, and AI analysis.',
-    parameters: crawl4aiDeepResearchSchema,
-    handler: handleCrawl4aiDeepResearch
-  });
+  // Register all tools by iterating through the configuration array
+  for (const config of toolConfigs) {
+    server.registerTool(config);
+  }
   
   return server;
 };

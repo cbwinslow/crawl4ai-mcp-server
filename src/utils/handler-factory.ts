@@ -5,7 +5,8 @@
  * parameter validation, error handling, and response formatting.
  */
 
-import { z } from 'zod';
+// Import Zod types when needed in the future
+// import { z } from 'zod';
 import adapter from '../adapters';
 import { formatContent } from './format-utils';
 import { formatErrorForMCP } from './error-utils';
@@ -14,7 +15,7 @@ import { MCPResponse, ToolHandler } from '../types';
 /**
  * Options for customizing handler behavior
  */
-interface HandlerOptions<T, R> {
+interface HandlerOptions<T extends Record<string, unknown>, R> {
   /** Optional parameter validation function */
   validateParams?: (params: T) => void;
   
@@ -31,7 +32,7 @@ interface HandlerOptions<T, R> {
 /**
  * Factory function to create standardized handlers for Crawl4AI operations
  */
-export function createHandler<T, K extends keyof typeof adapter>(
+export function createHandler<T extends Record<string, unknown>, K extends keyof typeof adapter>(
   adapterMethod: K,
   options: HandlerOptions<T, Awaited<ReturnType<typeof adapter[K]>>> = {}
 ): ToolHandler<T> {
@@ -44,18 +45,19 @@ export function createHandler<T, K extends keyof typeof adapter>(
       }
       
       // Extract main parameters based on convention (url or query)
-      const mainParam = (params as any).url || (params as any).query || (params as any).id;
+      const mainParam = params.url as string || params.query as string || params.id as string;
       const restParams = { ...params };
-      if ((params as any).url) delete (restParams as any).url;
-      if ((params as any).query) delete (restParams as any).query;
-      if ((params as any).id) delete (restParams as any).id;
+      
+      if ('url' in params) delete restParams.url;
+      if ('query' in params) delete restParams.query;
+      if ('id' in params) delete restParams.id;
       
       // Call the adapter method with appropriate parameters
       // We need to handle each adapter method signature pattern
       let response;
-      if ((params as any).urls) {
+      if ('urls' in params && Array.isArray(params.urls)) {
         // For extract method that takes array of URLs as first param
-        response = await (adapter[adapterMethod] as any)((params as any).urls, restParams);
+        response = await (adapter[adapterMethod] as any)(params.urls, restParams);
       } else {
         // For methods that take a single string param (url, query, id) and options
         response = await (adapter[adapterMethod] as any)(mainParam, restParams);
@@ -94,7 +96,10 @@ export function createHandler<T, K extends keyof typeof adapter>(
 /**
  * Creates a validator function that checks if a parameter exists and is a string
  */
-export function createStringValidator<T>(paramName: keyof T, errorMessage?: string): (params: T) => void {
+export function createStringValidator<T extends Record<string, unknown>>(
+  paramName: keyof T, 
+  errorMessage?: string
+): (params: T) => void {
   return (params: T) => {
     const value = params[paramName];
     if (!value || typeof value !== 'string') {
@@ -106,7 +111,10 @@ export function createStringValidator<T>(paramName: keyof T, errorMessage?: stri
 /**
  * Creates a validator function that checks if a parameter exists and is an array
  */
-export function createArrayValidator<T>(paramName: keyof T, errorMessage?: string): (params: T) => void {
+export function createArrayValidator<T extends Record<string, unknown>>(
+  paramName: keyof T, 
+  errorMessage?: string
+): (params: T) => void {
   return (params: T) => {
     const value = params[paramName];
     if (!value || !Array.isArray(value)) {

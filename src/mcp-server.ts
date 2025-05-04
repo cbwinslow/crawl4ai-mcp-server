@@ -104,7 +104,7 @@ const toolConfigs: ToolConfig[] = [
 /**
  * Creates and configures the MCP server
  */
-const createServer = (env: Env): MCPServer => {
+export const createMCPServer = (env: Env): MCPServer => {
   // Configure the adapter
   adapter.configure({
     apiKey: env.CRAWL4AI_API_KEY,
@@ -124,7 +124,7 @@ const createServer = (env: Env): MCPServer => {
  * Creates an MCP transport for Cloudflare Workers
  */
 export const createWorkerMCPTransport = (request: Request, env: Env) => {
-  const server = createServer(env);
+  const server = createMCPServer(env);
   return createWorkerTransport(server, request);
 };
 

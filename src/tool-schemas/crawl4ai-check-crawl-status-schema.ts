@@ -20,7 +20,7 @@ import { z } from 'zod';
  * It can provide statistics, list of URLs, error details, and can download the full results
  * when the crawl is complete. It also provides the option to cancel an ongoing crawl.
  */
-export const crawl4aiCheckCrawlStatusSchema = {
+export const crawl4aiCheckCrawlStatusSchema = z.object({
   // Required: The ID of the crawl job to check
   id: z.string()
     .describe('Crawl job ID to check. This is the ID returned by the crawl4ai_crawl tool when initiating a crawl. Must be a valid UUID or other identifier'),
@@ -52,7 +52,7 @@ export const crawl4aiCheckCrawlStatusSchema = {
   // Optional with default: Whether to cancel the crawl job if it's still running
   cancelIfRunning: z.boolean().optional().default(false)
     .describe('Cancel the crawl job if it\'s still running. This will stop the crawl and return the results collected so far. Useful for terminating long-running crawls that have collected sufficient data'),
-};
+});
 
 /**
  * Type definition for the crawl4ai_check_crawl_status handler function

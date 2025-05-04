@@ -58,7 +58,7 @@ const FormatEnum = z.enum([
 /**
  * Schema for the crawl4ai_scrape tool
  */
-export const crawl4aiScrapeSchema = {
+export const crawl4aiScrapeSchema = z.object({
   url: urlParam,
   formats: z.array(FormatEnum).default(['markdown'])
     .describe('Content formats to extract'),
@@ -81,6 +81,6 @@ export const crawl4aiScrapeSchema = {
     .describe('Remove base64 encoded images'),
   skipTlsVerification: z.boolean().optional()
     .describe('Skip TLS certificate verification'),
-};
+});
 
 export default crawl4aiScrapeSchema;

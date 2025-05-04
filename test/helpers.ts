@@ -4,6 +4,7 @@
  * Utility functions and mocks to assist with testing.
  */
 
+import { jest } from '@jest/globals';
 import axios from 'axios';
 import { mock } from 'jest-mock-extended';
 import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -11,13 +12,13 @@ import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 /**
  * Creates a mocked Axios response
  */
-export function mockAxiosResponse<T>(data: T, status = 200): AxiosResponse<T> {
+export function mockAxiosResponse<T>(data: T, status = 200): any {
   return {
     data,
     status,
     statusText: status === 200 ? 'OK' : 'Error',
     headers: {},
-    config: {} as AxiosRequestConfig
+    config: {}
   };
 }
 
@@ -37,7 +38,7 @@ export function mockAxiosError<T>(
     data: response.data || { error: message },
     statusText: response.statusText || 'Error',
     headers: response.headers || {},
-    config: response.config || {} as AxiosRequestConfig
+    config: response.config || {}
   };
   error.toJSON = () => ({ message, name: 'AxiosError' });
   return error;
@@ -46,7 +47,7 @@ export function mockAxiosError<T>(
 /**
  * Mock Axios instance factory
  */
-export function createMockAxiosInstance(): jest.Mocked<AxiosInstance> {
+export function createMockAxiosInstance() {
   const instance = mock<AxiosInstance>();
   
   // Default implementation for get and post
@@ -83,9 +84,9 @@ export function deepCopy<T>(obj: T): T {
 /**
  * Creates a spy on console.error
  */
-export function spyOnConsoleError(): jest.SpyInstance {
+export function spyOnConsoleError() {
   // Reset the mock to prevent interference between tests
-  const spy = jest.spyOn(console, 'error').mockImplementation();
+  const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
   return spy;
 }
 

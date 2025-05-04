@@ -20,7 +20,7 @@ import { z } from 'zod';
  * JSON schema or natural language prompts to guide the extraction process. It's
  * useful for converting unstructured web content into structured, usable data.
  */
-export const crawl4aiExtractSchema = {
+export const crawl4aiExtractSchema = z.object({
   // Required: List of URLs to extract information from
   urls: z.array(z.string()).min(1)
     .describe('List of URLs to extract information from. The tool will process each URL and extract the requested data. Must include at least one valid URL with protocol'),
@@ -64,7 +64,7 @@ export const crawl4aiExtractSchema = {
   // Optional with default: Output format for the extracted data
   outputFormat: z.enum(['json', 'markdown', 'text']).optional().default('json')
     .describe('Format for the extracted data in the response. "json" is most structured, "markdown" provides formatted text, and "text" is plain text'),
-};
+});
 
 /**
  * Type definition for the crawl4ai_extract handler function

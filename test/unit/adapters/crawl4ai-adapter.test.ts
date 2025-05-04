@@ -4,6 +4,7 @@
  * Unit tests for the Crawl4AI API adapter.
  */
 
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import axios from 'axios';
 import { Crawl4AIAdapter } from '../../../src/adapters/crawl4ai-adapter';
 import { mockAxiosResponse, mockAxiosError } from '../../helpers';

@@ -20,7 +20,7 @@ import { z } from 'zod';
  * which maps the structure of a website by discovering URLs from a starting point.
  * It can use sitemap.xml files, HTML link analysis, or both to discover URLs.
  */
-export const crawl4aiMapSchema = {
+export const crawl4aiMapSchema = z.object({
   // Required: The starting URL for URL discovery
   url: z.string()
     .describe('Starting URL for URL discovery. This should be the homepage or a section page of the website you want to map. Must include protocol (e.g., https://example.com)'),
@@ -60,7 +60,7 @@ export const crawl4aiMapSchema = {
   // Optional with default: Output format preference
   format: z.enum(['simple', 'detailed']).optional().default('simple')
     .describe('Output format: "simple" returns just URLs, "detailed" includes metadata like title and last modified date when available from sitemaps or HTML'),
-};
+});
 
 /**
  * Type definition for the crawl4ai_map handler function

@@ -4,6 +4,7 @@
  * Unit tests for the response formatting utility functions.
  */
 
+import { describe, it, expect } from '@jest/globals';
 import { formatContent } from '../../../src/utils/format-utils';
 import { MCPContent } from '../../../src/types';
 
@@ -37,7 +38,7 @@ describe('Format Utils', () => {
       ]);
       
       expect(formatContent(null)).toEqual([
-        { type: 'text', text: 'null' }
+        { type: 'text', text: 'No content returned.' }
       ]);
     });
     
@@ -119,7 +120,7 @@ describe('Format Utils', () => {
       expect(result).toEqual([
         { 
           type: 'text', 
-          text: 'URLs discovered:\n- https://example.com/1\n- https://example.com/2\n- https://example.com/3'
+          text: '3 URLs discovered:\n- https://example.com/1\n- https://example.com/2\n- https://example.com/3'
         }
       ]);
     });

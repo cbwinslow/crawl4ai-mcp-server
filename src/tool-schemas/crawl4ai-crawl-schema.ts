@@ -88,7 +88,7 @@ const WebhookSchema = z.union([
  * It's designed for situations where content from multiple related pages needs to be
  * collected in a single operation.
  */
-export const crawl4aiCrawlSchema = {
+export const crawl4aiCrawlSchema = z.object({
   // Required: The starting URL for the crawl
   url: z.string()
     .describe('Starting URL for the crawl. The crawler will begin from this page and follow links. Must be a valid URL including protocol (e.g., https://example.com)'),
@@ -135,7 +135,7 @@ export const crawl4aiCrawlSchema = {
   
   // Optional: Webhook to notify when crawl is complete
   webhook: WebhookSchema,
-};
+});
 
 /**
  * Type definition for the crawl4ai_crawl handler function

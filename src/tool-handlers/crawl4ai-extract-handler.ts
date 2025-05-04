@@ -11,9 +11,9 @@ import { createHandler, createArrayValidator } from '../utils/handler-factory';
  */
 export const handleCrawl4aiExtract = createHandler('extract', {
   validateParams: createArrayValidator('urls', 'URLs are required and must be an array'),
-  emptyResponseMessage: (params) => 
+  emptyResponseMessage: () => 
     `No data could be extracted from the provided URLs.`,
-  errorContext: (params) => `Error extracting data from URLs`
+  errorContext: () => `Error extracting data from URLs`
 });
 
 export default handleCrawl4aiExtract;

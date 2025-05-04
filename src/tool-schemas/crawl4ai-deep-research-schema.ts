@@ -22,7 +22,7 @@ import { z } from 'zod';
  * situations where a simple web search or page scrape is insufficient, and deeper
  * research across multiple sources is required.
  */
-export const crawl4aiDeepResearchSchema = {
+export const crawl4aiDeepResearchSchema = z.object({
   // Required: The main research query or topic
   query: z.string()
     .describe('The research query or topic to investigate in depth. This should be specific enough to guide the research but broad enough to allow for comprehensive coverage'),
@@ -58,7 +58,7 @@ export const crawl4aiDeepResearchSchema = {
   // Optional with default: Whether to include sources in the response
   includeSources: z.boolean().optional().default(true)
     .describe('Whether to include source URLs for each piece of information in the response. Setting to true enables attribution and verification of information'),
-};
+});
 
 /**
  * Type definition for the crawl4ai_deep_research handler function

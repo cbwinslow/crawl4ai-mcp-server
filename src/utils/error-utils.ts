@@ -2,50 +2,74 @@
  * Error Handling Utilities
  * 
  * Provides consistent error handling and formatting across the application.
+ * These utilities ensure that errors from various sources are handled uniformly
+ * and presented in a user-friendly format appropriate for the MCP protocol.
  */
 
 import { AxiosError } from 'axios';
 
 /**
- * Error types for better error classification
+ * Error types for better error classification and handling
  */
 export enum ErrorType {
-  VALIDATION = 'validation',
-  NETWORK = 'network',
-  API = 'api',
-  TIMEOUT = 'timeout',
-  AUTH = 'auth',
-  UNKNOWN = 'unknown'
+  VALIDATION = 'validation',  // Invalid input parameters
+  NETWORK = 'network',        // Network connectivity issues
+  API = 'api',                // API response errors
+  TIMEOUT = 'timeout',        // Request timeouts
+  AUTH = 'auth',              // Authentication/authorization failures
+  RATE_LIMIT = 'rate_limit',  // Rate limiting or quota exceeded
+  SERVER = 'server',          // Server-side errors
+  CLIENT = 'client',          // Client-side errors 
+  UNKNOWN = 'unknown'         // Unclassified errors
 }
 
 /**
- * Structured error object with consistent fields
+ * Structured error object with consistent fields for better error handling
  */
 export interface FormattedError {
-  message: string;
-  type: ErrorType;
-  status?: number;
-  details?: string;
+  message: string;            // Human-readable error message
+  type: ErrorType;            // Error classification
+  status?: number;            // HTTP status code if applicable
+  details?: string;           // Additional error details
+  retryable?: boolean;        // Whether the error is potentially retryable
+  errorCode?: string;         // Specific error code if available
 }
 
 /**
  * Transforms any error into a consistent FormattedError structure
+ * 
+ * @param error - The error object to transform
+ * @param context - Optional context string to prefix the error message
+ * @returns A standardized FormattedError object
  */
 export function transformError(error: unknown, context: string = ''): FormattedError {
+  // Set context prefix if provided
+  const contextPrefix = context ? `${context}: ` : '';
+  
   // Handle standard Error objects
   if (error instanceof Error) {
-    // Check for network errors like timeouts or connection failures
-    if (error.message.includes('timeout') || error.message.includes('network')) {
+    // Check for network errors 
+    if (error.message.includes('timeout')) {
       return {
-        message: `${context ? `${context}: ` : ''}${error.message}`,
+        message: `${contextPrefix}Request timed out. The operation took too long to complete.`,
         type: ErrorType.TIMEOUT,
-        details: error.stack
+        details: error.stack,
+        retryable: true
+      };
+    }
+    
+    if (error.message.includes('network') || error.message.includes('connection')) {
+      return {
+        message: `${contextPrefix}Network error: Connection failed or interrupted.`,
+        type: ErrorType.NETWORK,
+        details: error.stack,
+        retryable: true
       };
     }
     
     // Default Error handling
     return {
-      message: `${context ? `${context}: ` : ''}${error.message}`,
+      message: `${contextPrefix}${error.message}`,
       type: ErrorType.UNKNOWN,
       details: error.stack
     };
@@ -53,59 +77,148 @@ export function transformError(error: unknown, context: string = ''): FormattedE
   
   // Handle Axios errors with rich error information
   const axiosError = error as AxiosError;
-  if (axiosError.response) {
-    const status = axiosError.response.status;
-    const data = axiosError.response.data as any;
+  if (axiosError.isAxiosError) {
+    if (axiosError.response) {
+      const status = axiosError.response.status;
+      const data = axiosError.response.data as any;
+      
+      // Extract error message from response data
+      const errorMessage = data?.error || data?.message || 
+                           data?.errorMessage || data?.error_message ||
+                           axiosError.message;
+                           
+      // Extract error code if available
+      const errorCode = data?.code || data?.errorCode || data?.error_code || 
+                        axiosError.code || String(status);
+      
+      // Determine error type based on status code
+      let type = ErrorType.API;
+      let retryable = false;
+      
+      if (status === 400 || status === 422) {
+        type = ErrorType.VALIDATION;
+        retryable = false;
+      } else if (status === 401 || status === 403) {
+        type = ErrorType.AUTH;
+        retryable = false;
+      } else if (status === 429) {
+        type = ErrorType.RATE_LIMIT;
+        retryable = true;
+      } else if (status >= 500) {
+        type = ErrorType.SERVER;
+        retryable = true;
+      } else if (status >= 400 && status < 500) {
+        type = ErrorType.CLIENT;
+        retryable = false;
+      }
+      
+      return {
+        message: `${contextPrefix}API error (${status}): ${errorMessage}`,
+        type,
+        status,
+        details: JSON.stringify(data),
+        retryable,
+        errorCode
+      };
+    }
     
-    // Determine error type based on status code
-    let type = ErrorType.API;
-    if (status === 401 || status === 403) type = ErrorType.AUTH;
-    if (status === 400 || status === 422) type = ErrorType.VALIDATION;
+    if (axiosError.request) {
+      // Request was made but no response received
+      return {
+        message: `${contextPrefix}Network error: Request sent but no response received.`,
+        type: ErrorType.NETWORK,
+        details: String(axiosError.request),
+        retryable: true
+      };
+    }
     
+    // Axios error during request configuration
     return {
-      message: `API error (${status}): ${data?.error || data?.message || axiosError.message}`,
-      type,
-      status,
-      details: JSON.stringify(data)
-    };
-  }
-  
-  if (axiosError.request) {
-    // Request was made but no response received
-    return {
-      message: 'Network error: No response received',
-      type: ErrorType.NETWORK,
-      details: String(axiosError.request)
+      message: `${contextPrefix}Request error: ${axiosError.message}`,
+      type: ErrorType.CLIENT,
+      details: axiosError.stack,
+      retryable: false
     };
   }
   
   // Default case for unknown errors
   return {
-    message: `Unknown error: ${String(error)}`,
-    type: ErrorType.UNKNOWN
+    message: `${contextPrefix}Unknown error: ${String(error)}`,
+    type: ErrorType.UNKNOWN,
+    retryable: false
   };
 }
 
 /**
  * Formats errors for MCP protocol responses
+ * 
+ * @param error - The error to format
+ * @param context - Optional context to add to the error message
+ * @returns An array of MCP content objects for the error
  */
 export function formatErrorForMCP(error: unknown, context: string = ''): Array<{type: string, text: string}> {
   const formattedError = transformError(error, context);
+  
+  // For validation errors, provide more detailed information to help users correct the issue
+  if (formattedError.type === ErrorType.VALIDATION && formattedError.details) {
+    try {
+      const details = JSON.parse(formattedError.details);
+      // If there are validation details, include them
+      if (details.errors || details.validationErrors || details.fields) {
+        const validationErrors = details.errors || details.validationErrors || details.fields;
+        return [
+          { type: 'text', text: formattedError.message },
+          { type: 'text', text: `Validation errors: ${JSON.stringify(validationErrors, null, 2)}` }
+        ];
+      }
+    } catch (e) {
+      // If parsing fails, continue with standard formatting
+    }
+  }
+  
   return [{ type: 'text', text: formattedError.message }];
 }
 
 /**
  * Handles critical errors by logging and throwing formatted errors
+ * Use this for errors that should terminate the current operation
+ * 
+ * @param error - The error to handle
+ * @param context - Context for the error
+ * @throws Always throws an error with formatted message
  */
 export function handleCriticalError(error: unknown, context: string): never {
   const formattedError = transformError(error, context);
-  console.error(`${context}:`, formattedError);
+  console.error(`CRITICAL ERROR in ${context}:`, formattedError);
   throw new Error(formattedError.message);
+}
+
+/**
+ * Creates a custom error class for application-specific errors
+ */
+export class Crawl4AIError extends Error {
+  type: ErrorType;
+  status?: number;
+  details?: string;
+  retryable: boolean;
+  
+  constructor(message: string, type: ErrorType = ErrorType.UNKNOWN, status?: number, details?: string, retryable = false) {
+    super(message);
+    this.name = 'Crawl4AIError';
+    this.type = type;
+    this.status = status;
+    this.details = details;
+    this.retryable = retryable;
+    
+    // Ensure prototype chain works correctly
+    Object.setPrototypeOf(this, Crawl4AIError.prototype);
+  }
 }
 
 export default {
   transformError,
   formatErrorForMCP,
   handleCriticalError,
+  Crawl4AIError,
   ErrorType
 };

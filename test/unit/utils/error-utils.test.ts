@@ -4,6 +4,7 @@
  * Unit tests for the error handling utility functions.
  */
 
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { 
   transformError, 
   formatErrorForMCP, 
@@ -118,10 +119,10 @@ describe('Error Utils', () => {
   });
   
   describe('handleCriticalError', () => {
-    let consoleErrorSpy: jest.SpyInstance;
+    let consoleErrorSpy: any;
     
     beforeEach(() => {
-      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     });
     
     afterEach(() => {

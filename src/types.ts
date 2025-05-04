@@ -11,6 +11,14 @@ export interface MCPContent {
 }
 
 /**
+ * MCP Request format
+ */
+export interface MCPRequest {
+  name: string;
+  parameters: Record<string, any>;
+}
+
+/**
  * MCP Response format
  */
 export interface MCPResponse {

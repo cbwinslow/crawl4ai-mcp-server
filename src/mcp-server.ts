@@ -1,176 +1,135 @@
 /**
- * MCP Server implementation for Crawl4AI
+ * MCP Server
  * 
- * This file implements the Model Context Protocol server for the Crawl4AI integration,
- * providing web scraping and crawling capabilities to AI assistants through MCP.
+ * Configures and initializes the Model Context Protocol server with
+ * Crawl4AI tools and handlers.
  */
 
 import { MCPServer, createWorkerTransport } from '@modelcontextprotocol/sdk';
-import { Env, parseEnvInt } from './index';
+import { ToolConfig } from './types';
+import { Env } from './index';
 
-// Import all tool schemas and handlers
+// Import tool schemas
 import {
   crawl4aiScrapeSchema,
   crawl4aiMapSchema,
   crawl4aiCrawlSchema,
   crawl4aiCheckCrawlStatusSchema,
   crawl4aiExtractSchema,
-  crawl4aiDeepResearchSchema
+  crawl4aiDeepResearchSchema,
+  crawl4aiSearchSchema
 } from './tool-schemas';
 
+// Import handlers
 import {
   handleCrawl4aiScrape,
   handleCrawl4aiMap,
   handleCrawl4aiCrawl,
   handleCrawl4aiCheckCrawlStatus,
   handleCrawl4aiExtract,
-  handleCrawl4aiDeepResearch
+  handleCrawl4aiDeepResearch,
+  handleCrawl4aiSearch
 } from './tool-handlers';
 
-// Import adapter and utilities
-import adapter, { getConfigLimits } from './adapters';
+// Import adapter
+import adapter from './adapters';
 
 /**
- * Create a properly typed handler function for MCP tools
- * This addresses the Sourcery comment about repeated env casting
- * 
- * @param handler The original handler function
- * @returns A wrapped handler with proper env typing and error handling
+ * Wraps a handler with standardized error handling
  */
-function createTypedHandler(handler: (params: any, env?: any) => Promise<any>) {
+function wrapHandler(handler: Function): (params: any, rawEnv?: any) => Promise<any> {
   return async (params: any, rawEnv?: any): Promise<any> => {
     try {
-      // Cast the environment to the proper type once
-      const env = rawEnv as Env;
-      
-      // Parse and validate any numeric parameters
-      if (params.maxDepth !== undefined) {
-        params.maxDepth = parseEnvInt(params.maxDepth.toString(), 3);
-      }
-      
-      if (params.limit !== undefined) {
-        params.limit = parseEnvInt(params.limit.toString(), 100);
-      }
-      
-      if (params.timeout !== undefined) {
-        params.timeout = parseEnvInt(params.timeout.toString(), 30000);
-      }
-      
-      // Apply global limits from environment configuration
-      const { maxCrawlDepth, maxCrawlPages, maxTimeoutMs } = getConfigLimits(env);
-      
-      // Enforce maximum limits
-      if (params.maxDepth !== undefined) {
-        params.maxDepth = Math.min(params.maxDepth, maxCrawlDepth);
-      }
-      
-      if (params.limit !== undefined) {
-        params.limit = Math.min(params.limit, maxCrawlPages);
-      }
-      
-      if (params.timeout !== undefined) {
-        params.timeout = Math.min(params.timeout, maxTimeoutMs);
-      }
-      
-      // Call the original handler with properly typed environment
-      return handler(params, env);
+      return await handler(params, rawEnv as Env);
     } catch (error) {
       console.error('Handler error:', error);
-      
-      // Return a standardized error response
       return {
-        content: [
-          {
-            type: 'text',
-            text: `Error processing request: ${error instanceof Error ? error.message : String(error)}`
-          }
-        ]
+        content: [{ 
+          type: 'text', 
+          text: `Error: ${error instanceof Error ? error.message : String(error)}` 
+        }]
       };
     }
   };
 }
 
 /**
- * Create and configure the MCP server
- * 
- * @param apiKey Optional API key for Crawl4AI authentication
- * @returns Configured MCP server instance
+ * Tool configurations
  */
-const createServer = (apiKey?: string) => {
-  // Set API key if provided
-  if (apiKey) {
-    adapter.setApiKey(apiKey);
+const toolConfigs: ToolConfig[] = [
+  {
+    name: 'crawl4ai_scrape',
+    description: 'Scrape a webpage with options for content extraction including markdown, HTML, and screenshots.',
+    parameters: crawl4aiScrapeSchema,
+    handler: wrapHandler(handleCrawl4aiScrape)
+  },
+  {
+    name: 'crawl4ai_map',
+    description: 'Discover URLs from a starting point using sitemap.xml and HTML link discovery.',
+    parameters: crawl4aiMapSchema,
+    handler: wrapHandler(handleCrawl4aiMap)
+  },
+  {
+    name: 'crawl4ai_crawl',
+    description: 'Start an asynchronous crawl of multiple pages with depth control and filtering.',
+    parameters: crawl4aiCrawlSchema,
+    handler: wrapHandler(handleCrawl4aiCrawl)
+  },
+  {
+    name: 'crawl4ai_check_crawl_status',
+    description: 'Check the status of a crawl job.',
+    parameters: crawl4aiCheckCrawlStatusSchema,
+    handler: wrapHandler(handleCrawl4aiCheckCrawlStatus)
+  },
+  {
+    name: 'crawl4ai_extract',
+    description: 'Extract structured information from web pages using LLM.',
+    parameters: crawl4aiExtractSchema,
+    handler: wrapHandler(handleCrawl4aiExtract)
+  },
+  {
+    name: 'crawl4ai_deep_research',
+    description: 'Conduct deep research on a query using web crawling and AI analysis.',
+    parameters: crawl4aiDeepResearchSchema,
+    handler: wrapHandler(handleCrawl4aiDeepResearch)
+  },
+  {
+    name: 'crawl4ai_search',
+    description: 'Search and retrieve content from web pages with optional scraping.',
+    parameters: crawl4aiSearchSchema,
+    handler: wrapHandler(handleCrawl4aiSearch)
   }
+];
+
+/**
+ * Creates and configures the MCP server
+ */
+const createServer = (env: Env): MCPServer => {
+  // Configure the adapter
+  adapter.configure({
+    apiKey: env.CRAWL4AI_API_KEY,
+    baseUrl: env.CRAWL4AI_API_URL || 'http://localhost:11235'
+  });
   
-  // Create new MCP server instance
+  // Create server
   const server = new MCPServer();
   
-  // Define tool configurations for registration
-  const toolConfigs = [
-    {
-      name: 'crawl4ai_scrape',
-      description: 'Scrape a single webpage with advanced options for content extraction. Supports various formats including markdown, HTML, and screenshots. Can execute custom actions like clicking or scrolling before scraping.',
-      parameters: crawl4aiScrapeSchema,
-      handler: createTypedHandler(handleCrawl4aiScrape)
-    },
-    {
-      name: 'crawl4ai_map',
-      description: 'Discover URLs from a starting point. Can use both sitemap.xml and HTML link discovery.',
-      parameters: crawl4aiMapSchema,
-      handler: createTypedHandler(handleCrawl4aiMap)
-    },
-    {
-      name: 'crawl4ai_crawl',
-      description: 'Start an asynchronous crawl of multiple pages from a starting URL. Supports depth control, path filtering, and webhook notifications.',
-      parameters: crawl4aiCrawlSchema,
-      handler: createTypedHandler(handleCrawl4aiCrawl)
-    },
-    {
-      name: 'crawl4ai_check_crawl_status',
-      description: 'Check the status of a crawl job.',
-      parameters: crawl4aiCheckCrawlStatusSchema,
-      handler: createTypedHandler(handleCrawl4aiCheckCrawlStatus)
-    },
-    {
-      name: 'crawl4ai_extract',
-      description: 'Extract structured information from web pages using LLM. Supports both cloud AI and self-hosted LLM extraction.',
-      parameters: crawl4aiExtractSchema,
-      handler: createTypedHandler(handleCrawl4aiExtract)
-    },
-    {
-      name: 'crawl4ai_deep_research',
-      description: 'Conduct deep research on a query using web crawling, search, and AI analysis.',
-      parameters: crawl4aiDeepResearchSchema,
-      handler: createTypedHandler(handleCrawl4aiDeepResearch)
-    }
-  ];
-  
-  // Register all tools by iterating through the configuration array
-  for (const config of toolConfigs) {
-    server.registerTool(config);
-  }
+  // Register all tools
+  toolConfigs.forEach(tool => server.registerTool(tool));
   
   return server;
 };
 
 /**
- * Create the MCP server transport for Cloudflare Workers
- * 
- * @param request The incoming HTTP request
- * @param env Environment variables and bindings
- * @returns Configured MCP transport instance
+ * Creates an MCP transport for Cloudflare Workers
  */
 export const createWorkerMCPTransport = (request: Request, env: Env) => {
-  const server = createServer(env.CRAWL4AI_API_KEY);
+  const server = createServer(env);
   return createWorkerTransport(server, request);
 };
 
 /**
- * Handle MCP requests from clients
- * 
- * @param request The incoming HTTP request
- * @param env Environment variables and bindings
- * @returns HTTP response
+ * Handles incoming MCP protocol requests
  */
 export const handleMCPRequest = async (request: Request, env: Env): Promise<Response> => {
   const transport = createWorkerMCPTransport(request, env);

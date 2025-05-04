@@ -8,6 +8,10 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest test/unit",
+    "test:integration": "jest test/integration",
     "format": "prettier --write '**/*.{js,ts,json}'",
     "lint": "eslint --ext .ts src/",
     "typecheck": "tsc --noEmit"

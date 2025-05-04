@@ -20,6 +20,7 @@ For comprehensive details about this project, please refer to the following docu
 - [Enhanced Architecture](docs/ENHANCED_ARCHITECTURE.md) - Multi-tenant architecture with cloud provider flexibility
 - [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) - Technical implementation details and code examples
 - [Codebase Simplification](docs/SIMPLIFICATION.md) - Details on code simplification and best practices implemented
+- [Docker Setup Guide](docs/DOCKER.md) - Instructions for Docker setup for local development and production
 
 ## Features
 
@@ -109,6 +110,8 @@ crawl4ai-mcp/
 
 ### Local Development
 
+#### Using NPM
+
 1. Start the development server:
 
    ```bash
@@ -116,6 +119,56 @@ crawl4ai-mcp/
    ```
 
 2. The server will be available at <http://localhost:8787>
+
+#### Using Docker
+
+You can also use Docker for local development, which includes the Crawl4AI API and a debug UI:
+
+1. Set up environment variables:
+
+   ```bash
+   cp .env.example .env
+   # Edit .env file with your API key
+   ```
+
+2. Start the Docker development environment:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Access the services:
+   - MCP Server: <http://localhost:8787>
+   - Crawl4AI UI: <http://localhost:3000>
+
+See the [Docker Setup Guide](docs/DOCKER.md) for more details.
+
+### Testing
+
+The project includes a comprehensive test suite using Jest. To run tests:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with watch mode during development
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+```
+
+When running in Docker:
+
+```bash
+docker-compose exec mcp-server npm test
+```
 
 ## Deployment
 

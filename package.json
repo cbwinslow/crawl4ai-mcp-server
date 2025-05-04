@@ -1,0 +1,31 @@
+{
+  "name": "crawl4ai-mcp-server",
+  "version": "0.1.0",
+  "description": "CloudFlare Worker-based MCP Server for Crawl4AI",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler build",
+    "format": "prettier --write '**/*.{js,ts,json}'",
+    "lint": "eslint --ext .js,.ts .",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": "BjornMelin",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240404.0",
+    "@types/node": "^20.11.25",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.34.2"
+  },
+  "dependencies": {
+    "model-context-protocol": "^0.2.5",
+    "workers-mcp": "^1.0.2"
+  }
+}

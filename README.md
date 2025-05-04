@@ -13,7 +13,7 @@ This project implements a custom Model Context Protocol (MCP) Server that integr
 - 🗺️ **URL Discovery**: Map and discover URLs from a starting point
 - 🕸️ **Asynchronous Crawling**: Crawl entire websites efficiently
 - 📊 **Structured Data Extraction**: Extract specific data using CSS selectors or LLM-based strategies
-- 🔒 **OAuth Authentication**: Secure access with proper authorization
+- 🔒 **Authentication Options**: Secure access via OAuth or API key (Bearer token)
 
 ## Project Structure
 
@@ -101,8 +101,9 @@ This project is designed to be developed using Claude Code, with multiple sessio
    - Create adapter for Crawl4AI operations
    - Implement error handling and response formatting
 
-4. **OAuth Authentication** (Issue #4)
-   - Implement authentication with workers-oauth-provider
+4. **Authentication** (Issue #4)
+   - Implement OAuth authentication with workers-oauth-provider
+   - Add API key authentication using Bearer tokens
    - Create login page and token management
 
 5. **Main Worker Entry Point** (Issue #5)

@@ -16,9 +16,10 @@ This project implements a custom Model Context Protocol (MCP) Server that integr
 
 For comprehensive details about this project, please refer to the following documentation:
 
-- [MIGRATION_PLAN.md](MIGRATION_PLAN.md) - Detailed plan for migrating from Firecrawl to Crawl4AI
-- [ENHANCED_ARCHITECTURE.md](ENHANCED_ARCHITECTURE.md) - Multi-tenant architecture with cloud provider flexibility
-- [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) - Technical implementation details and code examples
+- [Migration Plan](docs/MIGRATION_PLAN.md) - Detailed plan for migrating from Firecrawl to Crawl4AI
+- [Enhanced Architecture](docs/ENHANCED_ARCHITECTURE.md) - Multi-tenant architecture with cloud provider flexibility
+- [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) - Technical implementation details and code examples
+- [Codebase Simplification](docs/SIMPLIFICATION.md) - Details on code simplification and best practices implemented
 
 ## Features
 
@@ -172,7 +173,7 @@ The project is being developed with these components in mind:
 
 ## Contributing
 
-Contributions are welcome! Please check the open issues or create a new one before starting work on a feature or bug fix. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+Contributions are welcome! Please check the open issues or create a new one before starting work on a feature or bug fix. See [Contributing Guidelines](CONTRIBUTING.md) for detailed guidelines.
 
 ## Support
 

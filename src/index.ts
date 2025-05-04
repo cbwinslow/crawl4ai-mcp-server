@@ -1,151 +1,53 @@
 /**
- * Main entry point for the Crawl4AI MCP Server CloudFlare Worker
+ * Crawl4AI MCP Server
  * 
- * This file handles incoming requests, routes them to the appropriate handler,
- * and integrates with the OAuth provider for authentication.
+ * Entry point for the Cloudflare Worker that hosts the Crawl4AI MCP server.
  */
 
-import { AuthProvider } from '@cloudflare/workers-oauth-provider';
 import { handleMCPRequest } from './mcp-server';
-import type { ExecutionContext, KVNamespace } from '@cloudflare/workers-types';
 
 /**
- * Environment interface for Cloudflare Worker
+ * Environment variables for the worker
  */
 export interface Env {
-  // API credentials for Crawl4AI
+  /**
+   * API key for the Crawl4AI service
+   */
   CRAWL4AI_API_KEY: string;
   
-  // OAuth configuration for authentication
-  OAUTH_CLIENT_ID: string;
-  OAUTH_CLIENT_SECRET: string;
-  
-  // Configuration for the server
-  API_VERSION: string;
-  MAX_CRAWL_DEPTH: string;
-  MAX_CRAWL_PAGES: string;
-  MAX_TIMEOUT_MS: string;
-  
-  // KV namespaces
-  CRAWL_DATA: KVNamespace;
-  SESSION_KV?: KVNamespace;
+  /**
+   * Base URL for the Crawl4AI API (defaults to http://localhost:11235)
+   */
+  CRAWL4AI_API_URL?: string;
 }
 
 /**
- * Parse and validate numeric environment variables
- * 
- * @param value The raw string value from environment
- * @param defaultValue Fallback value if parsing fails
- * @returns Validated numeric value
- */
-export function parseEnvInt(value: string | undefined, defaultValue: number): number {
-  if (!value) return defaultValue;
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? defaultValue : parsed;
-}
-
-/**
- * Worker event handler for incoming requests
+ * Handles all requests to the worker
  */
 export default {
+  /**
+   * Handle HTTP requests to the worker
+   */
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // Parse the request URL
     const url = new URL(request.url);
-    
-    // Setup OAuth provider
-    const oauthProvider = new AuthProvider({
-      clientId: env.OAUTH_CLIENT_ID,
-      clientSecret: env.OAUTH_CLIENT_SECRET,
-      redirectUrl: `${url.origin}/oauth/callback`,
-      scope: 'read:user',
-    });
-    
-    // Handle OAuth routes
-    if (url.pathname.startsWith('/oauth')) {
-      return oauthProvider.handleRequest(request);
-    }
     
     // Handle MCP requests
     if (url.pathname === '/mcp') {
-      try {
-        // Verify authentication
-        const authHeader = request.headers.get('Authorization');
-        
-        // Check if Authorization header exists and is in the correct format
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return new Response(JSON.stringify({ 
-            error: 'Unauthorized', 
-            message: 'Valid Authorization header with Bearer token is required'
-          }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Extract the token
-        const token = authHeader.replace('Bearer ', '');
-        
-        // If using session KV, validate token against stored session
-        if (env.SESSION_KV) {
-          const session = await env.SESSION_KV.get(token);
-          if (!session) {
-            return new Response(JSON.stringify({ 
-              error: 'Unauthorized', 
-              message: 'Invalid or expired token'
-            }), {
-              status: 401,
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
-        }
-        
-        // Pass the authenticated request to the MCP handler
-        return handleMCPRequest(request, env);
-      } catch (error) {
-        return new Response(JSON.stringify({ 
-          error: 'Internal server error',
-          message: error instanceof Error ? error.message : 'Unknown error'
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
+      return handleMCPRequest(request, env);
     }
     
-    // Handle root path with basic info
-    if (url.pathname === '/' || url.pathname === '') {
-      return new Response(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Crawl4AI MCP Server</title>
-          <style>
-            body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
-            h1 { color: #2563eb; }
-            code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
-          </style>
-        </head>
-        <body>
-          <h1>Crawl4AI MCP Server</h1>
-          <p>This server provides Model Context Protocol (MCP) access to Crawl4AI's web scraping and crawling capabilities.</p>
-          <p>To use this server with Claude or other MCP-enabled AI assistants, connect to: <code>${url.origin}/mcp</code></p>
-          <p>Authentication is required:</p>
-          <ul>
-            <li>Use OAuth: <a href="/oauth/login">Login here</a></li>
-            <li>Or use an API key via a Bearer token in the Authorization header</li>
-          </ul>
-        </body>
-        </html>
-      `, {
-        headers: {
-          'Content-Type': 'text/html'
-        }
+    // Handle health check
+    if (url.pathname === '/health') {
+      return new Response(JSON.stringify({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        service: 'crawl4ai-mcp-server'
+      }), {
+        headers: { 'Content-Type': 'application/json' }
       });
     }
     
-    // Return 404 for all other routes
+    // Handle unsupported paths
     return new Response('Not Found', { status: 404 });
   }
 };

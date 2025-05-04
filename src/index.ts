@@ -28,7 +28,7 @@ export default {
   /**
    * Handle HTTP requests to the worker
    */
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
     // Handle MCP requests

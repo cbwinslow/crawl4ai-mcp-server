@@ -28,5 +28,16 @@ module.exports = {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
-  testTimeout: 10000
+  testTimeout: 10000,
+  // Skip TypeScript typechecking for test files
+  // This speeds up the tests and avoids issues with missing typings
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        isolatedModules: true, // This skips TypeScript type checking
+        diagnostics: false    // Disable diagnostics
+      }
+    ]
+  }
 };

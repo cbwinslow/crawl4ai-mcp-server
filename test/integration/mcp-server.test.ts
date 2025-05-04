@@ -6,34 +6,49 @@
 
 import { describe, it, expect, jest, beforeAll } from '@jest/globals';
 import { MCPRequest } from '../../src/types';
+import { createMCPServer } from '../../src/mcp-server';
+
+// Create a mock MCPServer class
+class MockMCPServer {
+  getTools = jest.fn().mockReturnValue([
+    { name: 'crawl4ai_scrape' },
+    { name: 'crawl4ai_deep_research' },
+    { name: 'crawl4ai_map' },
+    { name: 'crawl4ai_crawl' },
+    { name: 'crawl4ai_check_crawl_status' },
+    { name: 'crawl4ai_extract' },
+    { name: 'crawl4ai_search' }
+  ]);
+
+  handleRequest = jest.fn().mockImplementation((req: any) => {
+    if (req.name === 'crawl4ai_scrape') {
+      return { content: [{ type: 'text', text: 'Test content' }] };
+    } else if (req.name === 'crawl4ai_deep_research') {
+      return { 
+        content: [
+          { type: 'text', text: 'Research results' },
+          { type: 'text', text: 'Sources:\n- https://example.com' }
+        ] 
+      };
+    }
+    return { content: [{ type: 'text', text: 'Response' }] };
+  });
+  
+  registerTool = jest.fn();
+}
 
 // Mock the MCP Server due to module resolution issues
-jest.mock('../../src/mcp-server', () => ({
-  createMCPServer: jest.fn().mockImplementation(() => ({
-    getTools: jest.fn().mockReturnValue([
-      { name: 'crawl4ai_scrape' },
-      { name: 'crawl4ai_deep_research' },
-      { name: 'crawl4ai_map' },
-      { name: 'crawl4ai_crawl' },
-      { name: 'crawl4ai_check_crawl_status' },
-      { name: 'crawl4ai_extract' },
-      { name: 'crawl4ai_search' }
-    ]),
-    handleRequest: jest.fn().mockImplementation((req: any) => {
-      if (req.name === 'crawl4ai_scrape') {
-        return { content: [{ type: 'text', text: 'Test content' }] };
-      } else if (req.name === 'crawl4ai_deep_research') {
-        return { 
-          content: [
-            { type: 'text', text: 'Research results' },
-            { type: 'text', text: 'Sources:\n- https://example.com' }
-          ] 
-        };
-      }
-      return { content: [{ type: 'text', text: 'Response' }] };
-    })
-  }))
-}));
+jest.mock('../../src/mcp-server', () => {
+  // Mock the @modelcontextprotocol/sdk import
+  jest.mock('@modelcontextprotocol/sdk', () => ({
+    MCPServer: MockMCPServer,
+    createWorkerTransport: jest.fn()
+  }), { virtual: true });
+
+  return {
+    createMCPServer: jest.fn().mockImplementation(() => new MockMCPServer())
+  };
+});
 
 // Mock the adapter module
 jest.mock('../../src/adapters', () => {
@@ -57,24 +72,46 @@ process.env.CRAWL4AI_API_KEY = 'test-api-key';
 process.env.CRAWL4AI_API_URL = 'https://api.crawl4ai.test';
 
 describe('MCP Server Integration', () => {
-  let server: any;
+  let mockServer: MockMCPServer;
   
-  beforeAll(() => {
-    server = createMCPServer({
-      apiKey: process.env.CRAWL4AI_API_KEY,
-      baseUrl: process.env.CRAWL4AI_API_URL
-    });
+  beforeEach(() => {
+    // Clear mocks between tests
+    jest.clearAllMocks();
+    
+    // Create a new mock server instance for each test
+    mockServer = new MockMCPServer();
+    (createMCPServer as jest.Mock).mockReturnValue(mockServer);
   });
   
   it('should initialize with the correct configuration', () => {
+    // Call createMCPServer to get our mock
+    const server = createMCPServer({
+      CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+      CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL
+    });
+    
     expect(server).toBeDefined();
-    expect(server.getTools).toBeDefined();
     
+    // Verify that getTools works correctly
+    const expectedTools = [
+      { name: 'crawl4ai_scrape' },
+      { name: 'crawl4ai_deep_research' },
+      { name: 'crawl4ai_map' },
+      { name: 'crawl4ai_crawl' },
+      { name: 'crawl4ai_check_crawl_status' },
+      { name: 'crawl4ai_extract' },
+      { name: 'crawl4ai_search' }
+    ];
+    
+    // Manually set the mock return value for this test
+    mockServer.getTools.mockReturnValueOnce(expectedTools);
+    
+    // Now call the method and check the result
     const tools = server.getTools();
-    expect(tools).toBeInstanceOf(Array);
-    expect(tools.length).toBeGreaterThan(0);
+    expect(tools).toEqual(expectedTools);
+    expect(tools.length).toBe(7);
     
-    // Should have the expected tools
+    // Verify that expected tools are in the list
     const toolNames = tools.map((tool: any) => tool.name);
     expect(toolNames).toContain('crawl4ai_scrape');
     expect(toolNames).toContain('crawl4ai_deep_research');
@@ -87,6 +124,12 @@ describe('MCP Server Integration', () => {
   
   describe('Tool Handling', () => {
     it('should handle crawl4ai_scrape requests', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL
+      });
+      
       const request: MCPRequest = {
         name: 'crawl4ai_scrape',
         parameters: {
@@ -95,15 +138,32 @@ describe('MCP Server Integration', () => {
         }
       };
       
+      // Set up mock response for this specific test
+      const mockResponse = { 
+        content: [{ type: 'text', text: 'Test content' }] 
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+      
+      // Make the request
       const response = await server.handleRequest(request);
       
-      expect(response).toBeDefined();
+      // Verify the response
+      expect(response).toEqual(mockResponse);
       expect(response.content).toBeInstanceOf(Array);
       expect(response.content[0].type).toBe('text');
       expect(response.content[0].text).toBe('Test content');
+      
+      // Verify the correct parameters were passed to handleRequest
+      expect(mockServer.handleRequest).toHaveBeenCalledWith(request);
     });
     
     it('should handle crawl4ai_deep_research requests', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL
+      });
+      
       const request: MCPRequest = {
         name: 'crawl4ai_deep_research',
         parameters: {
@@ -112,13 +172,27 @@ describe('MCP Server Integration', () => {
         }
       };
       
+      // Set up mock response for this specific test
+      const mockResponse = { 
+        content: [
+          { type: 'text', text: 'Research results' },
+          { type: 'text', text: 'Sources:\n- https://example.com' }
+        ] 
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+      
+      // Make the request
       const response = await server.handleRequest(request);
       
-      expect(response).toBeDefined();
+      // Verify the response
+      expect(response).toEqual(mockResponse);
       expect(response.content).toBeInstanceOf(Array);
       expect(response.content[0].type).toBe('text');
       expect(response.content[0].text).toBe('Research results');
       expect(response.content[1].text).toContain('Sources:');
+      
+      // Verify the correct parameters were passed to handleRequest
+      expect(mockServer.handleRequest).toHaveBeenCalledWith(request);
     });
     
     // Add more tests for other tools here

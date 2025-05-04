@@ -12,6 +12,14 @@
 
 This project implements a custom Model Context Protocol (MCP) Server that integrates with Crawl4AI, an open-source web scraping and crawling library. The server is deployed as a remote MCP server on CloudFlare Workers, allowing AI assistants like Claude to access Crawl4AI's powerful web scraping capabilities.
 
+## Documentation
+
+For comprehensive details about this project, please refer to the following documentation:
+
+- [MIGRATION_PLAN.md](MIGRATION_PLAN.md) - Detailed plan for migrating from Firecrawl to Crawl4AI
+- [ENHANCED_ARCHITECTURE.md](ENHANCED_ARCHITECTURE.md) - Multi-tenant architecture with cloud provider flexibility
+- [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) - Technical implementation details and code examples
+
 ## Features
 
 ### Web Data Acquisition

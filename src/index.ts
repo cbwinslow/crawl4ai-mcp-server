@@ -7,6 +7,7 @@
 
 import { AuthProvider } from '@cloudflare/workers-oauth-provider';
 import { handleMCPRequest } from './mcp-server';
+import type { ExecutionContext, KVNamespace } from '@cloudflare/workers-types';
 
 /**
  * Environment interface for Cloudflare Worker
@@ -19,8 +20,28 @@ export interface Env {
   OAUTH_CLIENT_ID: string;
   OAUTH_CLIENT_SECRET: string;
   
-  // KV namespace for session data (optional)
+  // Configuration for the server
+  API_VERSION: string;
+  MAX_CRAWL_DEPTH: string;
+  MAX_CRAWL_PAGES: string;
+  MAX_TIMEOUT_MS: string;
+  
+  // KV namespaces
+  CRAWL_DATA: KVNamespace;
   SESSION_KV?: KVNamespace;
+}
+
+/**
+ * Parse and validate numeric environment variables
+ * 
+ * @param value The raw string value from environment
+ * @param defaultValue Fallback value if parsing fails
+ * @returns Validated numeric value
+ */
+export function parseEnvInt(value: string | undefined, defaultValue: number): number {
+  if (!value) return defaultValue;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
 }
 
 /**
@@ -126,5 +147,5 @@ export default {
     
     // Return 404 for all other routes
     return new Response('Not Found', { status: 404 });
-  },
+  }
 };

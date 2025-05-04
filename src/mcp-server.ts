@@ -6,7 +6,7 @@
  */
 
 import { MCPServer, createWorkerTransport } from '@modelcontextprotocol/sdk';
-import { Env } from './index';
+import { Env, parseEnvInt } from './index';
 
 // Import all tool schemas and handlers
 import {
@@ -27,8 +27,68 @@ import {
   handleCrawl4aiDeepResearch
 } from './tool-handlers';
 
-// Import adapter to configure API key
-import adapter from './adapters';
+// Import adapter and utilities
+import adapter, { getConfigLimits } from './adapters';
+
+/**
+ * Create a properly typed handler function for MCP tools
+ * This addresses the Sourcery comment about repeated env casting
+ * 
+ * @param handler The original handler function
+ * @returns A wrapped handler with proper env typing and error handling
+ */
+function createTypedHandler(handler: (params: any, env?: any) => Promise<any>) {
+  return async (params: any, rawEnv?: any): Promise<any> => {
+    try {
+      // Cast the environment to the proper type once
+      const env = rawEnv as Env;
+      
+      // Parse and validate any numeric parameters
+      if (params.maxDepth !== undefined) {
+        params.maxDepth = parseEnvInt(params.maxDepth.toString(), 3);
+      }
+      
+      if (params.limit !== undefined) {
+        params.limit = parseEnvInt(params.limit.toString(), 100);
+      }
+      
+      if (params.timeout !== undefined) {
+        params.timeout = parseEnvInt(params.timeout.toString(), 30000);
+      }
+      
+      // Apply global limits from environment configuration
+      const { maxCrawlDepth, maxCrawlPages, maxTimeoutMs } = getConfigLimits(env);
+      
+      // Enforce maximum limits
+      if (params.maxDepth !== undefined) {
+        params.maxDepth = Math.min(params.maxDepth, maxCrawlDepth);
+      }
+      
+      if (params.limit !== undefined) {
+        params.limit = Math.min(params.limit, maxCrawlPages);
+      }
+      
+      if (params.timeout !== undefined) {
+        params.timeout = Math.min(params.timeout, maxTimeoutMs);
+      }
+      
+      // Call the original handler with properly typed environment
+      return handler(params, env);
+    } catch (error) {
+      console.error('Handler error:', error);
+      
+      // Return a standardized error response
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error processing request: ${error instanceof Error ? error.message : String(error)}`
+          }
+        ]
+      };
+    }
+  };
+}
 
 /**
  * Create and configure the MCP server
@@ -51,37 +111,37 @@ const createServer = (apiKey?: string) => {
       name: 'crawl4ai_scrape',
       description: 'Scrape a single webpage with advanced options for content extraction. Supports various formats including markdown, HTML, and screenshots. Can execute custom actions like clicking or scrolling before scraping.',
       parameters: crawl4aiScrapeSchema,
-      handler: handleCrawl4aiScrape
+      handler: createTypedHandler(handleCrawl4aiScrape)
     },
     {
       name: 'crawl4ai_map',
       description: 'Discover URLs from a starting point. Can use both sitemap.xml and HTML link discovery.',
       parameters: crawl4aiMapSchema,
-      handler: handleCrawl4aiMap
+      handler: createTypedHandler(handleCrawl4aiMap)
     },
     {
       name: 'crawl4ai_crawl',
       description: 'Start an asynchronous crawl of multiple pages from a starting URL. Supports depth control, path filtering, and webhook notifications.',
       parameters: crawl4aiCrawlSchema,
-      handler: handleCrawl4aiCrawl
+      handler: createTypedHandler(handleCrawl4aiCrawl)
     },
     {
       name: 'crawl4ai_check_crawl_status',
       description: 'Check the status of a crawl job.',
       parameters: crawl4aiCheckCrawlStatusSchema,
-      handler: handleCrawl4aiCheckCrawlStatus
+      handler: createTypedHandler(handleCrawl4aiCheckCrawlStatus)
     },
     {
       name: 'crawl4ai_extract',
       description: 'Extract structured information from web pages using LLM. Supports both cloud AI and self-hosted LLM extraction.',
       parameters: crawl4aiExtractSchema,
-      handler: handleCrawl4aiExtract
+      handler: createTypedHandler(handleCrawl4aiExtract)
     },
     {
       name: 'crawl4ai_deep_research',
       description: 'Conduct deep research on a query using web crawling, search, and AI analysis.',
       parameters: crawl4aiDeepResearchSchema,
-      handler: handleCrawl4aiDeepResearch
+      handler: createTypedHandler(handleCrawl4aiDeepResearch)
     }
   ];
   

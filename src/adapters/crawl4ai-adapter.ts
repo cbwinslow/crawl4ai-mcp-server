@@ -82,6 +82,36 @@ export class Crawl4AIAdapter {
   private retryConfig: RetryConfig;
   private cache: LRUCache<string, any>;
   private baseUrl: string;
+  
+  /**
+   * Transform errors into a consistent format
+   * 
+   * @param error The error to transform
+   * @param context The operation context for more specific error messages
+   * @returns Formatted error message
+   */
+  private transformError(error: unknown, context = 'API'): string {
+    if (error instanceof z.ZodError) {
+      return `Invalid ${context} options: ${error.message}`;
+    }
+    
+    if (error instanceof Crawl4AIError) {
+      return `${context} error (${error.type}): ${error.message}`;
+    }
+    
+    const axiosError = error as import('axios').AxiosError;
+    if (axiosError.response) {
+      const status = axiosError.response.status;
+      const errorData = axiosError.response.data as any;
+      return `FireCrawl API error (${status}): ${errorData.error || errorData.message || axiosError.message}`;
+    }
+    
+    if (error instanceof Error) {
+      return `${context} error: ${error.message}`;
+    }
+    
+    return `Unknown ${context} error: ${String(error)}`;
+  }
 
   /**
    * Creates a new Crawl4AI adapter instance
@@ -273,7 +303,7 @@ export class Crawl4AIAdapter {
       return result;
     } catch (error) {
       console.error(`Error scraping ${url}:`, error);
-      throw error;
+      throw new Error(this.transformError(error, 'scrape'));
     }
   }
 
@@ -302,7 +332,14 @@ export class Crawl4AIAdapter {
       return result;
     } catch (error) {
       console.error(`Error researching ${query}:`, error);
-      throw error;
+      // For deepResearch, return a structured error response instead of throwing
+      const errorMsg = this.transformError(error, 'deep research');
+      return {
+        query,
+        success: false,
+        results: { summary: '', sources: [], details: {} },
+        error: errorMsg,
+      };
     }
   }
 
@@ -333,7 +370,7 @@ export class Crawl4AIAdapter {
       return result;
     } catch (error) {
       console.error(`Error mapping URLs from ${url}:`, error);
-      throw error;
+      throw new Error(this.transformError(error, 'URL mapping'));
     }
   }
 
@@ -360,7 +397,7 @@ export class Crawl4AIAdapter {
       return result;
     } catch (error) {
       console.error(`Error starting crawl from ${url}:`, error);
-      throw error;
+      throw new Error(this.transformError(error, 'crawl'));
     }
   }
 
@@ -387,7 +424,7 @@ export class Crawl4AIAdapter {
       return result;
     } catch (error) {
       console.error(`Error checking crawl status for job ${id}:`, error);
-      throw error;
+      throw new Error(this.transformError(error, 'status check'));
     }
   }
 
@@ -418,7 +455,7 @@ export class Crawl4AIAdapter {
       return result;
     } catch (error) {
       console.error(`Error extracting data from URLs:`, error);
-      throw error;
+      throw new Error(this.transformError(error, 'extraction'));
     }
   }
 

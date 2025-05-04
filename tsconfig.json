@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2021",
-    "lib": ["ES2021"],
     "module": "ESNext",
     "moduleResolution": "node",
     "esModuleInterop": true,
@@ -19,9 +18,24 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "outDir": "dist",
-    "types": ["@cloudflare/workers-types"]
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "declaration": true,
+    "sourceMap": true,
+    "lib": [
+      "ES2021",
+      "WebWorker"
+    ],
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
+    ]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

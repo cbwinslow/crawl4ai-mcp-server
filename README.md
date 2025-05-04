@@ -1,3 +1,9 @@
+# ⚠️ NOTICE
+
+> **MCP SERVER CURRENTLY UNDER DEVELOPMENT**  
+> **NOT READY FOR PRODUCTION USE**  
+> **WILL UPDATE WHEN OPERATIONAL**
+
 # Crawl4AI MCP Server
 
 🚀 High-performance MCP Server for Crawl4AI - Enable AI assistants to access web scraping, crawling, and deep research via Model Context Protocol. Faster and more efficient than FireCrawl!
@@ -9,23 +15,28 @@ This project implements a custom Model Context Protocol (MCP) Server that integr
 ## Features
 
 ### Web Data Acquisition
+
 - 🌐 **Single Webpage Scraping**: Extract content from individual webpages
 - 🕸️ **Web Crawling**: Crawl websites with configurable depth and page limits
 - 🗺️ **URL Discovery**: Map and discover URLs from a starting point
+- 🕸️ **Asynchronous Crawling**: Crawl entire websites efficiently
 
 ### Content Processing
+
 - 🔍 **Deep Research**: Conduct comprehensive research across multiple pages
 - 📊 **Structured Data Extraction**: Extract specific data using CSS selectors or LLM-based extraction
 - 🔎 **Content Search**: Search through previously crawled content
 
 ### Integration & Security
+
 - 🔄 **MCP Integration**: Seamless integration with MCP clients (Claude Desktop, etc.)
 - 🔒 **OAuth Authentication**: Secure access with proper authorization
+- 🔒 **Authentication Options**: Secure access via OAuth or API key (Bearer token)
 - ⚡ **High Performance**: Optimized for speed and efficiency
 
 ## Project Structure
 
-```
+```plaintext
 crawl4ai-mcp/
 ├── src/
 │   ├── index.ts               # Main entry point with OAuth provider setup
@@ -59,22 +70,26 @@ crawl4ai-mcp/
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/BjornMelin/crawl4ai-mcp-server.git
    cd crawl4ai-mcp-server
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Set up CloudFlare KV namespace:
+
    ```bash
    wrangler kv:namespace create CRAWL_DATA
    ```
 
 4. Update `wrangler.toml` with the KV namespace ID:
+
    ```toml
    kv_namespaces = [
      { binding = "CRAWL_DATA", id = "your-namespace-id" }
@@ -86,56 +101,17 @@ crawl4ai-mcp/
 ### Local Development
 
 1. Start the development server:
+
    ```bash
    npm run dev
    ```
 
-2. The server will be available at http://localhost:8787
-
-### Development with Claude Code
-
-This project is designed to be developed using Claude Code, with multiple sessions working on different components.
-
-1. **Create a Claude Code Session**
-   ```bash
-   # Create a new branch for the feature you want to work on
-   git checkout -b feature/feature-name
-
-   # Start a Claude Code session
-   claude code
-   ```
-
-2. **Connect Claude to the Project**
-   In the Claude Code session, provide context about what you're working on:
-   ```
-   I'm working on the crawl4ai-mcp-server repository. 
-   The goal is to implement [feature]. Please help me implement this component
-   following the project architecture and best practices.
-   ```
-
-3. **Follow Conventional Commits**
-   When making commits, follow the conventional commits format:
-   ```
-   feat: Add new feature
-   fix: Fix bug
-   docs: Update documentation
-   chore: Update dependencies
-   test: Add tests
-   ```
-
-4. **Create Pull Requests**
-   After completing a feature:
-   ```bash
-   # Push your branch
-   git push origin feature/feature-name
-
-   # Create a pull request using GitHub CLI or web interface
-   gh pr create --title "feat: Implement feature" --body "Closes #X" --base main
-   ```
+2. The server will be available at <http://localhost:8787>
 
 ## Deployment
 
 1. Deploy to CloudFlare Workers:
+
    ```bash
    npm run deploy
    ```
@@ -145,6 +121,12 @@ This project is designed to be developed using Claude Code, with multiple sessio
 ## Usage with MCP Clients
 
 This server implements the Model Context Protocol, allowing AI assistants to access its tools.
+
+### Authentication
+
+- Implement OAuth authentication with workers-oauth-provider
+- Add API key authentication using Bearer tokens
+- Create login page and token management
 
 ### Connecting to an MCP Client
 
@@ -182,11 +164,12 @@ The project is being developed with these components in mind:
 
 ## Contributing
 
-Contributions are welcome! Please check the open issues or create a new one before starting work on a feature or bug fix. Follow the development workflow described above when submitting contributions.
+Contributions are welcome! Please check the open issues or create a new one before starting work on a feature or bug fix. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Support
 
 If you encounter issues or have questions:
+
 - Open an issue on the GitHub repository
 - Check the [Crawl4AI documentation](https://crawl4ai.com/docs)
 - Refer to the [Model Context Protocol specification](https://github.com/anthropics/model-context-protocol)

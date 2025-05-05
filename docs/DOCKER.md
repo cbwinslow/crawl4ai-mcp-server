@@ -84,7 +84,7 @@ The following environment variables can be configured:
 |----------|-------------|---------------|
 | `NODE_ENV` | Environment mode (`development` or `production`) | `production` |
 | `CRAWL4AI_API_KEY` | API key for Crawl4AI service | Required |
-| `CRAWL4AI_API_URL` | URL of the Crawl4AI API | `http://localhost:11235` |
+| `CRAWL4AI_API_URL` | URL of the Crawl4AI API | `https://api.crawl4ai.com` |
 | `PORT` | Port to run the MCP server on | `8787` |
 
 ## Deploying to CloudFlare Workers

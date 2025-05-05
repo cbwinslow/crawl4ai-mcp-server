@@ -141,15 +141,13 @@ export const createMCPServer = (env: Env): MCPServer => {
   // Configure the adapter
   adapter.configure({
     apiKey: env.CRAWL4AI_API_KEY,
-    baseUrl: env.CRAWL4AI_API_URL || 'http://localhost:11235',
+    baseUrl: env.CRAWL4AI_API_URL || 'https://api.crawl4ai.com',
   });
 
-  // Create server
+  // Create server and register all tools
   const server = new MCPServer();
-
-  // Register all tools
   toolConfigs.forEach(tool => server.registerTool(tool));
-
+  
   return server;
 };
 
@@ -164,10 +162,8 @@ export const createMCPServer = (env: Env): MCPServer => {
  * @param env - The environment object containing API keys and configuration
  * @returns A configured worker transport that can handle MCP requests
  */
-export const createWorkerMCPTransport = (request: Request, env: Env) => {
-  const server = createMCPServer(env);
-  return createWorkerTransport(server, request);
-};
+export const createWorkerMCPTransport = (request: Request, env: Env) => 
+  createWorkerTransport(createMCPServer(env), request);
 
 /**
  * Handles incoming MCP protocol requests

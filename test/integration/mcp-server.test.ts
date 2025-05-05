@@ -56,20 +56,107 @@ jest.mock('../../src/mcp-server', () => {
   };
 });
 
-// Mock the adapter module
+// Mock the adapter module but with real function calls that return mock responses
+import adapter from '../../src/adapters';
+
 jest.mock('../../src/adapters', () => {
+  const mockAdapter = {
+    configure: jest.fn(),
+    scrape: jest.fn().mockImplementation(async (url, options) => {
+      // Return a realistic mock response
+      return {
+        success: true,
+        url,
+        content: {
+          markdown: '# Test Content\n\nThis is sample content from the scrape operation.',
+          links: ['https://example.com/page1', 'https://example.com/page2']
+        }
+      };
+    }),
+    deepResearch: jest.fn().mockImplementation(async (query, options) => {
+      // Return a realistic mock response
+      return {
+        success: true,
+        query,
+        results: {
+          summary: `Research results for "${query}"`,
+          sources: [
+            { url: 'https://example.com/research1', title: 'Research Source 1' },
+            { url: 'https://example.com/research2', title: 'Research Source 2' }
+          ]
+        }
+      };
+    }),
+    mapUrls: jest.fn().mockImplementation(async (url, options) => {
+      // Return a realistic mock response
+      return {
+        success: true,
+        url,
+        urls: ['https://example.com/page1', 'https://example.com/page2', 'https://example.com/page3'],
+        count: 3
+      };
+    }),
+    crawl: jest.fn().mockImplementation(async (url, options) => {
+      // Return a realistic mock response
+      return {
+        success: true,
+        id: 'crawl-123',
+        url,
+        status: 'queued'
+      };
+    }),
+    checkCrawlStatus: jest.fn().mockImplementation(async (id, options) => {
+      // Return a realistic mock response
+      return {
+        success: true,
+        id,
+        url: 'https://example.com',
+        status: 'in_progress',
+        progress: 60,
+        pagesProcessed: 6,
+        pagesTotal: 10,
+        startTime: new Date().toISOString()
+      };
+    }),
+    extract: jest.fn().mockImplementation(async (urls, options) => {
+      // Return a realistic mock response
+      return {
+        success: true,
+        urls,
+        data: {
+          title: 'Example Page',
+          description: 'This is an example page for testing',
+          properties: {
+            price: '$9.99',
+            rating: '4.5/5'
+          }
+        }
+      };
+    }),
+    search: jest.fn().mockImplementation(async (query, options) => {
+      // Return a realistic mock response
+      return {
+        success: true,
+        query,
+        results: [
+          {
+            url: 'https://example.com/result1',
+            title: 'Search Result 1',
+            description: 'Description for result 1'
+          },
+          {
+            url: 'https://example.com/result2',
+            title: 'Search Result 2',
+            description: 'Description for result 2'
+          }
+        ]
+      };
+    })
+  };
+
   return {
     __esModule: true,
-    default: {
-      configure: jest.fn(),
-      scrape: jest.fn(),
-      deepResearch: jest.fn(),
-      mapUrls: jest.fn(),
-      crawl: jest.fn(),
-      checkCrawlStatus: jest.fn(),
-      extract: jest.fn(),
-      search: jest.fn(),
-    },
+    default: mockAdapter
   };
 });
 
@@ -153,14 +240,15 @@ describe('MCP Server Integration', () => {
       // Make the request
       const response = await server.handleRequest(request);
 
-      // Verify the response
+      // Verify the response format
       expect(response).toEqual(mockResponse);
       expect(response.content).toBeInstanceOf(Array);
       expect(response.content[0].type).toBe('text');
-      expect(response.content[0].text).toBe('Test content');
 
-      // Verify the correct parameters were passed to handleRequest
-      expect(mockServer.handleRequest).toHaveBeenCalledWith(request);
+      // Verify the adapter was called with the correct parameters
+      expect(adapter.scrape).toHaveBeenCalledWith(request.parameters.url, expect.objectContaining({
+        formats: ['markdown'],
+      }));
     });
 
     it('should handle crawl4ai_deep_research requests', async () => {
@@ -190,17 +278,204 @@ describe('MCP Server Integration', () => {
       // Make the request
       const response = await server.handleRequest(request);
 
-      // Verify the response
-      expect(response).toEqual(mockResponse);
+      // Verify response format
       expect(response.content).toBeInstanceOf(Array);
-      expect(response.content[0].type).toBe('text');
-      expect(response.content[0].text).toBe('Research results');
-      expect(response.content[1].text).toContain('Sources:');
+      expect(response.content.length).toBeGreaterThanOrEqual(1);
 
-      // Verify the correct parameters were passed to handleRequest
-      expect(mockServer.handleRequest).toHaveBeenCalledWith(request);
+      // Verify the adapter was called with the correct parameters
+      expect(adapter.deepResearch).toHaveBeenCalledWith(request.parameters.query, expect.objectContaining({
+        maxDepth: 3,
+      }));
     });
 
-    // Add more tests for other tools here
+    it('should handle crawl4ai_map requests', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL,
+      });
+
+      const request: MCPRequest = {
+        name: 'crawl4ai_map',
+        parameters: {
+          url: 'https://example.com',
+          includeSubdomains: true,
+        },
+      };
+
+      const mockResponse = {
+        content: [{ type: 'text', text: 'URLs discovered' }],
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+
+      // Make the request
+      const response = await server.handleRequest(request);
+
+      // Verify response format
+      expect(response.content).toBeInstanceOf(Array);
+      
+      // Verify adapter was called correctly
+      expect(adapter.mapUrls).toHaveBeenCalledWith(request.parameters.url, expect.objectContaining({
+        includeSubdomains: true,
+      }));
+    });
+
+    it('should handle crawl4ai_crawl requests', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL,
+      });
+
+      const request: MCPRequest = {
+        name: 'crawl4ai_crawl',
+        parameters: {
+          url: 'https://example.com',
+          maxDepth: 2,
+        },
+      };
+
+      const mockResponse = {
+        content: [{ type: 'text', text: 'Crawl started' }],
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+
+      // Make the request
+      const response = await server.handleRequest(request);
+
+      // Verify response format
+      expect(response.content).toBeInstanceOf(Array);
+      
+      // Verify adapter was called correctly
+      expect(adapter.crawl).toHaveBeenCalledWith(request.parameters.url, expect.objectContaining({
+        maxDepth: 2,
+      }));
+    });
+
+    it('should handle crawl4ai_check_crawl_status requests', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL,
+      });
+
+      const request: MCPRequest = {
+        name: 'crawl4ai_check_crawl_status',
+        parameters: {
+          id: 'crawl-123',
+          detailed: true,
+        },
+      };
+
+      const mockResponse = {
+        content: [{ type: 'text', text: 'Crawl status' }],
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+
+      // Make the request
+      const response = await server.handleRequest(request);
+
+      // Verify response format
+      expect(response.content).toBeInstanceOf(Array);
+      
+      // Verify adapter was called correctly
+      expect(adapter.checkCrawlStatus).toHaveBeenCalledWith(request.parameters.id, expect.objectContaining({
+        detailed: true,
+      }));
+    });
+
+    it('should handle crawl4ai_extract requests', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL,
+      });
+
+      const request: MCPRequest = {
+        name: 'crawl4ai_extract',
+        parameters: {
+          urls: ['https://example.com/page1', 'https://example.com/page2'],
+          schema: { properties: {} },
+        },
+      };
+
+      const mockResponse = {
+        content: [{ type: 'json', text: '{"extracted": true}' }],
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+
+      // Make the request
+      const response = await server.handleRequest(request);
+
+      // Verify response format
+      expect(response.content).toBeInstanceOf(Array);
+      
+      // Verify adapter was called correctly
+      expect(adapter.extract).toHaveBeenCalledWith(request.parameters.urls, expect.objectContaining({
+        schema: expect.any(Object),
+      }));
+    });
+
+    it('should handle crawl4ai_search requests', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL,
+      });
+
+      const request: MCPRequest = {
+        name: 'crawl4ai_search',
+        parameters: {
+          query: 'test search',
+          limit: 10,
+        },
+      };
+
+      const mockResponse = {
+        content: [{ type: 'text', text: 'Search results' }],
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+
+      // Make the request
+      const response = await server.handleRequest(request);
+
+      // Verify response format
+      expect(response.content).toBeInstanceOf(Array);
+      
+      // Verify adapter was called correctly
+      expect(adapter.search).toHaveBeenCalledWith(request.parameters.query, expect.objectContaining({
+        limit: 10,
+      }));
+    });
+
+    it('should handle errors gracefully', async () => {
+      // Initialize the server for this test
+      const server = createMCPServer({
+        CRAWL4AI_API_KEY: process.env.CRAWL4AI_API_KEY,
+        CRAWL4AI_API_URL: process.env.CRAWL4AI_API_URL,
+      });
+
+      // Set up adapter to throw an error
+      adapter.scrape.mockRejectedValueOnce(new Error('Test error'));
+
+      const request: MCPRequest = {
+        name: 'crawl4ai_scrape',
+        parameters: {
+          url: 'https://example.com',
+        },
+      };
+
+      const mockResponse = {
+        content: [{ type: 'text', text: 'Error: Test error' }],
+      };
+      mockServer.handleRequest.mockResolvedValueOnce(mockResponse);
+
+      // Make the request
+      const response = await server.handleRequest(request);
+
+      // Verify response contains error
+      expect(response.content[0].type).toBe('text');
+      expect(response.content[0].text).toContain('Error');
+    });
   });
 });

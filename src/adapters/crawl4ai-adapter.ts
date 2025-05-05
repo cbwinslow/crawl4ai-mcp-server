@@ -51,9 +51,9 @@ export class Crawl4AIAdapter {
    * Creates a new adapter instance
    *
    * @param apiKey - Optional API key for authentication
-   * @param baseUrl - Base URL for the Crawl4AI API, defaults to local Docker instance
+   * @param baseUrl - Base URL for the Crawl4AI API, defaults to production API endpoint
    */
-  constructor(apiKey: string = '', baseUrl = 'http://localhost:11235') {
+  constructor(apiKey: string = '', baseUrl = 'https://api.crawl4ai.com') {
     this.baseUrl = baseUrl;
 
     this.apiClient = axios.create({
@@ -76,7 +76,9 @@ export class Crawl4AIAdapter {
    * @param apiKey - API key to use for authorization
    */
   public setApiKey(apiKey: string): void {
-    if (!apiKey) return;
+    if (!apiKey) {
+      return;
+    }
     this.apiClient.defaults.headers.common['Authorization'] = `Bearer ${apiKey}`;
   }
 
@@ -86,13 +88,15 @@ export class Crawl4AIAdapter {
    * @param config - Configuration object with apiKey and/or baseUrl
    */
   public configure(config: AdapterConfig): void {
-    if (config.apiKey) {
-      this.setApiKey(config.apiKey);
+    const { apiKey, baseUrl } = config;
+    
+    if (apiKey) {
+      this.setApiKey(apiKey);
     }
 
-    if (config.baseUrl) {
-      this.baseUrl = config.baseUrl;
-      this.apiClient.defaults.baseURL = config.baseUrl;
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+      this.apiClient.defaults.baseURL = baseUrl;
     }
   }
 
@@ -107,7 +111,9 @@ export class Crawl4AIAdapter {
 
     for (const [key, value] of Object.entries(params)) {
       // Skip undefined values
-      if (value === undefined) continue;
+      if (value === undefined) {
+        continue;
+      }
 
       const snakeCaseKey = toSnakeCase(key);
 
@@ -158,11 +164,12 @@ export class Crawl4AIAdapter {
           : await this.apiClient.post<T>(endpoint, requestData, config);
 
       // Handle empty responses
-      if (!response.data) {
+      const { data } = response;
+      if (!data) {
         return {} as T;
       }
 
-      return response.data;
+      return data;
     } catch (error) {
       // Transform the error to a standardized format
       const formattedError = transformError(error, requestContext);

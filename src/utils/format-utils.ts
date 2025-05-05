@@ -82,7 +82,9 @@ export function formatContent(content: FormattableContent): MCPContent[] {
  * @returns Formatted MCP content
  */
 function handleResearchResults(content: Record<string, unknown>): MCPContent[] {
-  if (!content.results) return [];
+  if (!content.results) {
+    return [];
+  }
 
   // Handle string results
   if (typeof content.results === 'string') {
@@ -123,7 +125,9 @@ function handleResearchResults(content: Record<string, unknown>): MCPContent[] {
  * @returns Formatted MCP content
  */
 function handleUrlMapping(content: Record<string, unknown>): MCPContent[] {
-  if (!content.urls || !Array.isArray(content.urls)) return [];
+  if (!content.urls || !Array.isArray(content.urls)) {
+    return [];
+  }
 
   // Format URLs as a bulleted list
   const urlCount = content.urls.length;
@@ -144,19 +148,21 @@ function handleUrlMapping(content: Record<string, unknown>): MCPContent[] {
  * @returns Formatted MCP content
  */
 function handleSearchResults(content: Record<string, unknown>): MCPContent[] {
-  if (!content.results || !Array.isArray(content.results)) return [];
+  if (!content.results || !Array.isArray(content.results)) {
+    return [];
+  }
 
   // Format for search results
   const resultCount = content.results.length;
-  const searchQuery = content.query || '';
+  const { query: searchQuery = '' } = content;
   const header = `${resultCount} result${resultCount === 1 ? '' : 's'} for "${searchQuery}":\n\n`;
 
   // Format each result
   const formattedResults = content.results
     .map((result: SearchResultItem, index: number) => {
-      const title = result.title || result.url || `Result ${index + 1}`;
-      const url = result.url || '';
-      const snippet = result.snippet || result.description || '';
+      const { url = '', title: resultTitle, snippet: resultSnippet, description } = result;
+      const title = resultTitle || url || `Result ${index + 1}`;
+      const snippet = resultSnippet || description || '';
 
       return `${index + 1}. **${title}**\n   ${url}\n   ${snippet}\n`;
     })
@@ -173,11 +179,12 @@ function handleSearchResults(content: Record<string, unknown>): MCPContent[] {
  */
 function handleCrawlStatus(content: Record<string, unknown>): MCPContent[] {
   // Check if it looks like a crawl status response
-  if (!content.id || content.status === undefined) return [];
+  if (!content.id || content.status === undefined) {
+    return [];
+  }
 
   // Format status
-  const id = content.id;
-  const status = content.status;
+  const { id, status } = content;
   const progress = content.progress !== undefined ? `${content.progress}%` : 'unknown';
 
   let statusText = `Crawl Job: ${id}\nStatus: ${status}\nProgress: ${progress}`;
@@ -312,7 +319,58 @@ function handleFormatProperties(content: Record<string, unknown>): MCPContent[] 
   return [];
 }
 
+/**
+ * Creates a standardized MCP content item with specified type and text
+ *
+ * @param type - The content type (text, html, json, etc.)
+ * @param text - The content text
+ * @returns An MCPContent object
+ */
+export const createMCPContent = (type: ContentType, text: string): MCPContent => 
+  ({ type, text });
+
+/**
+ * Creates a standardized text content item
+ *
+ * @param text - The text content
+ * @returns An MCPContent object with type 'text'
+ */
+export const createTextContent = (text: string): MCPContent => 
+  createMCPContent(ContentType.TEXT, text);
+
+/**
+ * Creates a standardized HTML content item
+ *
+ * @param html - The HTML content
+ * @returns An MCPContent object with type 'html'
+ */
+export const createHTMLContent = (html: string): MCPContent => 
+  createMCPContent(ContentType.HTML, html);
+
+/**
+ * Creates a standardized JSON content item
+ *
+ * @param data - The data to stringify as JSON
+ * @returns An MCPContent object with type 'json'
+ */
+export const createJSONContent = (data: unknown): MCPContent => 
+  createMCPContent(ContentType.JSON, JSON.stringify(data, null, 2));
+
+/**
+ * Creates a standardized MCP response with content
+ *
+ * @param content - The content items (or single item)
+ * @returns An MCPResponse object
+ */
+export const createMCPResponse = (content: MCPContent | MCPContent[]): MCPResponse => 
+  ({ content: Array.isArray(content) ? content : [content] });
+
 export default {
   formatContent,
   ContentType,
+  createMCPContent,
+  createTextContent,
+  createHTMLContent,
+  createJSONContent,
+  createMCPResponse,
 };

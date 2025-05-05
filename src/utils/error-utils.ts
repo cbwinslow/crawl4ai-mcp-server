@@ -7,6 +7,7 @@
  */
 
 import { AxiosError } from 'axios';
+import { createTextContent } from './format-utils';
 
 /**
  * Error types for better error classification and handling
@@ -192,8 +193,8 @@ export function formatErrorForMCP(
       if (details.errors || details.validationErrors || details.fields) {
         const validationErrors = details.errors || details.validationErrors || details.fields;
         return [
-          { type: 'text', text: formattedError.message },
-          { type: 'text', text: `Validation errors: ${JSON.stringify(validationErrors, null, 2)}` },
+          createTextContent(formattedError.message),
+          createTextContent(`Validation errors: ${JSON.stringify(validationErrors, null, 2)}`),
         ];
       }
     } catch (e) {
@@ -201,7 +202,7 @@ export function formatErrorForMCP(
     }
   }
 
-  return [{ type: 'text', text: formattedError.message }];
+  return [createTextContent(formattedError.message)];
 }
 
 /**

@@ -30,3 +30,13 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 **/CLAUDE.local.md
+
+# Test coverage reports
+coverage/
+.nyc_output/
+
+# Jest cache
+.jest/
+
+# TypeScript cache
+*.tsbuildinfo

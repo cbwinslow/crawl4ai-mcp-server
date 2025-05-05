@@ -11,6 +11,14 @@ export interface MCPContent {
 }
 
 /**
+ * MCP Request format
+ */
+export interface MCPRequest {
+  name: string;
+  parameters: Record<string, unknown>;
+}
+
+/**
  * MCP Response format
  */
 export interface MCPResponse {
@@ -29,5 +37,5 @@ export interface ToolConfig {
   name: string;
   description: string;
   parameters: object;
-  handler: (params: any, rawEnv?: any) => Promise<any>;
+  handler: (params: Record<string, unknown>, rawEnv?: unknown) => Promise<MCPResponse>;
 }

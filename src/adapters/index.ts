@@ -1,6 +1,6 @@
 /**
  * API Adapter
- * 
+ *
  * Configures and exports the Crawl4AI adapter instance.
  */
 

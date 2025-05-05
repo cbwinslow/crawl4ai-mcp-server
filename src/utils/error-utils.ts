@@ -48,12 +48,16 @@ export function transformError(error: unknown, context: string = ''): FormattedE
 
   // Handle standard Error objects
   if (error instanceof Error) {
+    // Only include stack traces in non-production environments
+    const isProduction = process.env.NODE_ENV === 'production';
+    const safeDetails = isProduction ? 'Error details omitted in production' : error.stack;
+    
     // Check for network errors
     if (error.message.includes('timeout')) {
       return {
         message: `${contextPrefix}Request timed out. The operation took too long to complete.`,
         type: ErrorType.TIMEOUT,
-        details: error.stack,
+        details: safeDetails,
         retryable: true,
       };
     }
@@ -62,7 +66,7 @@ export function transformError(error: unknown, context: string = ''): FormattedE
       return {
         message: `${contextPrefix}Network error: Connection failed or interrupted.`,
         type: ErrorType.NETWORK,
-        details: error.stack,
+        details: safeDetails,
         retryable: true,
       };
     }
@@ -71,7 +75,7 @@ export function transformError(error: unknown, context: string = ''): FormattedE
     return {
       message: `${contextPrefix}${error.message}`,
       type: ErrorType.UNKNOWN,
-      details: error.stack,
+      details: safeDetails,
     };
   }
 
@@ -115,11 +119,17 @@ export function transformError(error: unknown, context: string = ''): FormattedE
         retryable = false;
       }
 
+      // Only include detailed response data in non-production environments
+      const isProduction = process.env.NODE_ENV === 'production';
+      const safeDetails = isProduction 
+        ? `Status code: ${status}` 
+        : JSON.stringify(data);
+
       return {
         message: `${contextPrefix}API error (${status}): ${errorMessage}`,
         type,
         status,
-        details: JSON.stringify(data),
+        details: safeDetails,
         retryable,
         errorCode,
       };
@@ -127,19 +137,28 @@ export function transformError(error: unknown, context: string = ''): FormattedE
 
     if (axiosError.request) {
       // Request was made but no response received
+      // Only include detailed request info in non-production environments
+      const isProduction = process.env.NODE_ENV === 'production';
+      const safeRequestDetails = isProduction 
+        ? 'Request details omitted in production' 
+        : String(axiosError.request);
+        
       return {
         message: `${contextPrefix}Network error: Request sent but no response received.`,
         type: ErrorType.NETWORK,
-        details: String(axiosError.request),
+        details: safeRequestDetails,
         retryable: true,
       };
     }
 
     // Axios error during request configuration
+    const isProduction = process.env.NODE_ENV === 'production';
+    const safeStackDetails = isProduction ? 'Stack trace omitted in production' : axiosError.stack;
+    
     return {
       message: `${contextPrefix}Request error: ${axiosError.message}`,
       type: ErrorType.CLIENT,
-      details: axiosError.stack,
+      details: safeStackDetails,
       retryable: false,
     };
   }
@@ -195,7 +214,19 @@ export function formatErrorForMCP(
  */
 export function handleCriticalError(error: unknown, context: string): never {
   const formattedError = transformError(error, context);
-  console.error(`CRITICAL ERROR in ${context}:`, formattedError);
+  
+  // In production, only log the message and type without sensitive details
+  if (process.env.NODE_ENV === 'production') {
+    console.error(`CRITICAL ERROR in ${context}:`, {
+      message: formattedError.message,
+      type: formattedError.type,
+      status: formattedError.status
+    });
+  } else {
+    // Full detailed logging in non-production environments
+    console.error(`CRITICAL ERROR in ${context}:`, formattedError);
+  }
+  
   throw new Error(formattedError.message);
 }
 

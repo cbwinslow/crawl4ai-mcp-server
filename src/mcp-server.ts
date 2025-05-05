@@ -52,7 +52,18 @@ function wrapHandler(
     try {
       return await handler(params, rawEnv as Env);
     } catch (error) {
-      console.error('Handler error:', error);
+      // In production, limit the error details that are logged
+      if (process.env.NODE_ENV === 'production') {
+        console.error('Handler error:', {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : 'Unknown error',
+          // Omit stack trace and other potentially sensitive details
+        });
+      } else {
+        // Full detailed logging in non-production environments
+        console.error('Handler error:', error);
+      }
+      
       return {
         content: [
           {

@@ -57,7 +57,7 @@ export class DatabaseClient {
     endpoint = '/files'
   ): Promise<void> {
     const form = new FormData();
-    const blob = typeof content === 'string' ? new Blob([content]) : new Blob([content]);
+    const blob = new Blob([content]);
     form.append('file', blob, filename);
 
     const res = await fetch(`${this.apiBaseUrl}${endpoint}`, {

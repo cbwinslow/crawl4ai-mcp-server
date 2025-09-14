@@ -43,6 +43,7 @@ For comprehensive details about this project, please refer to the following docu
 - 🔒 **OAuth Authentication**: Secure access with proper authorization
 - 🔒 **Authentication Options**: Secure access via OAuth or API key (Bearer token)
 - ⚡ **High Performance**: Optimized for speed and efficiency
+- 📦 **Database Connectivity**: Optional client to send data and files to SQL or vector databases via HTTP APIs
 
 ## Project Structure
 
@@ -168,6 +169,18 @@ When running in Docker:
 
 ```bash
 docker-compose exec mcp-server npm test
+```
+
+### Database Client Usage
+
+The repository includes a `DatabaseClient` utility for sending data or files to external database services (SQL or vector DBs) via HTTP APIs.
+
+```typescript
+import { DatabaseClient } from './src/utils/database-client';
+
+const client = new DatabaseClient({ apiBaseUrl: 'https://example.com/api', apiKey: 'KEY' });
+await client.saveData({ foo: 'bar' });
+await client.saveFile('content', 'example.txt');
 ```
 
 ## Deployment
